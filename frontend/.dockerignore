@@ -1,0 +1,12 @@
+**/node_modules
+**/.nuxt
+**/.output
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.mypy_cache
+storage/
+.git
+.env

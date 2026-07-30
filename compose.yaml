@@ -1,0 +1,4 @@
+# Convenience shim so `docker compose up` works from the repository root.
+# The real definition lives in infrastructure/docker-compose.yml.
+include:
+  - infrastructure/docker-compose.yml

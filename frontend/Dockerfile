@@ -1,0 +1,25 @@
+FROM node:22-alpine AS build
+WORKDIR /app
+
+# `npm ci` installs exactly the locked tree: reproducible, and it avoids
+# npm's resolver choking on a cold install of this dependency graph.
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# The Nitro output is fully self-contained, so the runtime image carries no
+# node_modules and no source.
+FROM node:22-alpine AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    NITRO_HOST=0.0.0.0 \
+    NITRO_PORT=3000
+
+COPY --from=build /app/.output ./.output
+
+USER node
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]
