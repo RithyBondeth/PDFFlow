@@ -37,11 +37,21 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_storage):
     monkeypatch.setattr(events, "publish", lambda *a, **k: None)
     monkeypatch.setattr(events, "last_event", lambda *a, **k: None)
 
-    # The limiter's counters live in Redis; limiting itself is nginx+slowapi
-    # configuration rather than application logic, so it is off here.
+    # The limiter stays ENABLED, with counters moved from Redis to memory.
+    # Disabling it here once hid a real bug: slowapi injects rate-limit headers
+    # into a Response the endpoint must declare, and with the limiter off that
+    # code path never ran, so every rate-limited route 500'd in production
+    # while the suite stayed green.
+    from limits.storage import MemoryStorage
+    from limits.strategies import MovingWindowRateLimiter
+
     from app.services.rate_limit import limiter
 
-    monkeypatch.setattr(limiter, "enabled", False)
+    storage = MemoryStorage()
+    monkeypatch.setattr(limiter, "_storage", storage, raising=False)
+    monkeypatch.setattr(
+        limiter, "_limiter", MovingWindowRateLimiter(storage), raising=False
+    )
 
     from app.api.routes import jobs as jobs_route
     from app.worker import tasks
@@ -73,6 +83,18 @@ def test_operations_catalog_is_served(client):
     assert response.status_code == 200
     keys = {op["key"] for op in response.json()}
     assert {"merge", "split", "compress", "rotate"} <= keys
+
+
+def test_rate_limited_routes_inject_their_headers(client, pdf_bytes):
+    """Proves the slowapi header-injection path runs. It needs the endpoint to
+    declare a `response: Response` parameter; without one it raises, which is
+    how every rate-limited route once broke in a container while this suite
+    was green."""
+    response = upload(client, "doc.pdf", pdf_bytes)
+
+    assert response.status_code == 200
+    assert "x-ratelimit-limit" in response.headers
+    assert "x-ratelimit-remaining" in response.headers
 
 
 def test_config_exposes_limits(client):

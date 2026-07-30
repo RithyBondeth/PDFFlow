@@ -92,7 +92,9 @@ services:
       migrate:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD", "celery", "-A", "app.worker.celery_app.celery_app", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      # CMD-SHELL, not CMD: the exec form has no shell, so $$HOSTNAME would
+      # be passed literally and the ping would never match a live node.
+      test: ["CMD-SHELL", "celery -A app.worker.celery_app.celery_app inspect ping -d celery@$$HOSTNAME"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -148,4 +150,8 @@ volumes:
       device: tmpfs
       # Temporary documents live in RAM and vanish with the container, which is
       # the strongest form of "we do not keep your files".
-      o: size=2g,mode=0700
+      #
+      # uid/gid must match the unprivileged `pdfflow` user in the backend image:
+      # the mount overlays the image's chowned directory, so without these the
+      # API and worker cannot write to their own storage root.
+      o: size=2g,mode=0700,uid=10001,gid=10001

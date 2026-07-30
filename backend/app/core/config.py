@@ -6,9 +6,10 @@ no module has to reach for ``os.environ`` directly.
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -52,7 +53,13 @@ class Settings(BaseSettings):
         return self.storage_root / "processed"
 
     # --- security --------------------------------------------------------
-    cors_origins: list[str] = Field(default=["http://localhost:3000"])
+    # NoDecode stops pydantic-settings from trying to JSON-parse the raw env
+    # value before validation. Without it, a plain comma-separated list —
+    # which is what .env.example and docker-compose supply — raises at import
+    # time, taking down the API, worker and beat before they start.
+    cors_origins: Annotated[list[str], NoDecode] = Field(
+        default=["http://localhost:3000"]
+    )
     rate_limit_uploads: str = Field(default="30/minute")
     rate_limit_jobs: str = Field(default="60/minute")
 

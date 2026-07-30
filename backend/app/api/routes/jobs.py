@@ -1,7 +1,7 @@
 import asyncio
 import uuid
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -29,7 +29,10 @@ def list_operations() -> list[dict]:
 )
 @limiter.limit(settings.rate_limit_jobs)
 def create_job(
-    request: Request, payload: JobCreate, db: Session = Depends(get_db)
+    request: Request,
+    response: Response,  # slowapi injects rate-limit headers into this
+    payload: JobCreate,
+    db: Session = Depends(get_db),
 ) -> JobOut:
     job = job_service.create_job(
         db,

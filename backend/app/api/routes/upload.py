@@ -1,7 +1,7 @@
 import logging
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, File, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 @limiter.limit(settings.rate_limit_uploads)
 async def upload(
     request: Request,
+    response: Response,  # slowapi injects rate-limit headers into this
     db: Session = Depends(get_db),
     files: list[UploadFile] = File(...),
 ) -> UploadResponse:
