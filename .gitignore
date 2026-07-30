@@ -1,0 +1,35 @@
+# --- secrets & local config -------------------------------------------
+.env
+.env.local
+
+# --- user data ---------------------------------------------------------
+# Nothing under storage/ should ever be committed; it is by definition
+# temporary user documents.
+storage/uploads/*
+storage/processed/*
+!storage/**/.gitkeep
+
+# --- python ------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+celerybeat-schedule*
+
+# --- node / nuxt -------------------------------------------------------
+node_modules/
+.nuxt/
+.output/
+.nitro/
+dist/
+*.log
+
+# --- editors & os ------------------------------------------------------
+.DS_Store
+.idea/
+.vscode/
