@@ -31,7 +31,7 @@ export default defineNuxtConfig({
           content:
             'Merge, split, compress and convert PDFs in your browser. No account, no tracking, files deleted automatically.',
         },
-        { name: 'theme-color', content: '#0b0d12' },
+        { name: 'theme-color', content: '#ffffff' },
       ],
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     },

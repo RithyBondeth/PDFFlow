@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import type { Operation } from '~/types/api'
 
-defineProps<{ operation: Operation; selected?: boolean }>()
+const props = defineProps<{ operation: Operation; selected?: boolean; index?: number }>()
 defineEmits<{ select: [Operation] }>()
+
+const indexLabel = computed(() =>
+  props.index ? String(props.index).padStart(2, '0') : null,
+)
 
 const ICONS: Record<string, string> = {
   merge: 'i-lucide-combine',
@@ -36,9 +40,10 @@ const ICONS: Record<string, string> = {
     @click="$emit('select', operation)"
   >
     <div class="flex items-center gap-2">
+      <span v-if="indexLabel" class="font-mono text-xs text-ink-700">{{ indexLabel }}</span>
       <UIcon
         :name="ICONS[operation.key] ?? 'i-lucide-wand-2'"
-        class="size-5 text-accent-400"
+        class="size-5 text-accent-600"
       />
       <span class="font-medium text-ink-200">{{ operation.name }}</span>
       <UBadge

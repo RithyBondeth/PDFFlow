@@ -19,14 +19,14 @@ const tone = computed(() => {
       <UIcon
         v-if="tone === 'active'"
         name="i-lucide-loader-2"
-        class="size-5 animate-spin text-accent-400"
+        class="size-5 animate-spin text-accent-600"
       />
       <UIcon
         v-else-if="tone === 'success'"
         name="i-lucide-check-circle-2"
-        class="size-5 text-green-400"
+        class="size-5 text-green-600"
       />
-      <UIcon v-else name="i-lucide-alert-circle" class="size-5 text-red-400" />
+      <UIcon v-else name="i-lucide-alert-circle" class="size-5 text-red-600" />
 
       <p class="flex-1 text-sm font-medium text-ink-200">
         {{ errorMessage || label }}

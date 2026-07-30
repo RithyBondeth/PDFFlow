@@ -61,38 +61,54 @@ const promises = [
 <template>
   <div>
     <!-- Hero -->
-    <section class="mx-auto max-w-3xl px-6 pb-16 pt-20 text-center">
-      <h1 class="text-balance text-5xl font-semibold tracking-tight text-white sm:text-6xl">
-        Fast, private PDF tools.
-        <span class="block text-accent-400">No signup required.</span>
-      </h1>
-      <p class="mx-auto mt-5 max-w-xl text-pretty text-lg text-ink-400">
-        Merge, split, compress and convert documents in seconds. Your files are
-        processed and then deleted — nothing is kept, nothing is shared.
-      </p>
+    <section id="upload" class="relative scroll-mt-20 overflow-hidden px-6 pb-16 pt-20">
+      <div class="grid-fade pointer-events-none absolute inset-0" aria-hidden="true" />
+      <div class="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
+        <div>
+          <span class="inline-flex items-center gap-2 rounded-full border border-ink-800 px-3 py-1 font-mono text-xs uppercase tracking-widest text-ink-400">
+            <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
+            {{ operations.length }} tools · zero accounts
+          </span>
 
-      <div class="mt-10">
-        <UploadPanel
-          :uploading="uploading"
-          :progress="uploadProgress"
-          :error="error"
-          @files="handleFiles"
-          @error="error = $event"
-          @dismiss="error = null"
-        />
+          <h1 class="mt-5 text-balance text-5xl font-black leading-[0.95] tracking-tight text-ink-950 sm:text-6xl">
+            Your PDFs,
+            <span class="block"><span class="highlight-mark">handled.</span></span>
+          </h1>
+          <p class="mt-5 max-w-xl text-pretty text-lg text-ink-400">
+            Merge, split, compress and convert documents in seconds. Your files are
+            processed and then deleted — nothing is kept, nothing is shared.
+          </p>
+
+          <div class="mt-8">
+            <UploadPanel
+              :uploading="uploading"
+              :progress="uploadProgress"
+              :error="error"
+              @files="handleFiles"
+              @error="error = $event"
+              @dismiss="error = null"
+            />
+          </div>
+
+          <ul class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-400">
+            <li v-for="promise in promises" :key="promise.title" class="flex items-center gap-1.5">
+              <UIcon :name="promise.icon" class="size-4 text-accent-600" />
+              {{ promise.title }}
+            </li>
+          </ul>
+        </div>
+
+        <HeroPreview class="hidden lg:block" />
       </div>
-
-      <ul class="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-ink-400">
-        <li v-for="promise in promises" :key="promise.title" class="flex items-center gap-1.5">
-          <UIcon :name="promise.icon" class="size-4 text-accent-400" />
-          {{ promise.title }}
-        </li>
-      </ul>
     </section>
 
     <!-- Tools -->
     <section id="tools" class="mx-auto max-w-6xl scroll-mt-20 px-6 py-16">
-      <h2 class="text-2xl font-semibold text-white">Every tool you need</h2>
+      <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-ink-400">
+        <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
+        Works with your files
+      </span>
+      <h2 class="mt-3 text-2xl font-semibold text-ink-950">Every tool you need</h2>
       <p class="mt-2 text-ink-400">
         Pick a file first — PDFFlow only offers the tools that fit what you uploaded.
       </p>
@@ -103,9 +119,10 @@ const promises = [
         </h3>
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ToolCard
-            v-for="operation in operations.filter((op) => op.category === category.key)"
+            v-for="(operation, i) in operations.filter((op) => op.category === category.key)"
             :key="operation.key"
             :operation="operation"
+            :index="i + 1"
           />
         </div>
       </div>
@@ -114,22 +131,24 @@ const promises = [
     <!-- Privacy -->
     <section id="privacy" class="mx-auto max-w-6xl scroll-mt-20 px-6 py-16">
       <div class="panel p-8 sm:p-12">
-        <h2 class="text-2xl font-semibold text-white">What happens to your files</h2>
+        <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-ink-400">
+          <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
+          Made to stay out of your way
+        </span>
+        <h2 class="mt-3 text-2xl font-semibold text-ink-950">What happens to your files</h2>
         <p class="mt-2 max-w-2xl text-ink-400">
           Most PDF sites ask you to trust a privacy policy. Here is the actual
           lifecycle instead.
         </p>
 
-        <ol class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <ol class="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <li v-for="(step, index) in [
             { title: 'Upload', body: 'Your file is written to a temporary directory under a random UUID name. Its original name is never used on disk.' },
             { title: 'Process', body: 'A background worker reads it, does the one operation you asked for, and writes the result.' },
             { title: 'Download', body: 'You fetch the result over a link tied to your job id. No index, no listing, no sharing.' },
             { title: 'Delete', body: 'Inputs are removed the moment the job ends; results within 30 minutes. A sweep runs every 5 minutes.' },
-          ]" :key="step.title" class="space-y-2">
-            <span class="flex size-8 items-center justify-center rounded-full bg-accent-500/15 text-sm font-semibold text-accent-400">
-              {{ index + 1 }}
-            </span>
+          ]" :key="step.title" class="space-y-1.5 border-t border-ink-800 pt-4">
+            <span class="block font-mono text-sm text-accent-600">{{ String(index + 1).padStart(2, '0') }}</span>
             <h3 class="font-medium text-ink-200">{{ step.title }}</h3>
             <p class="text-sm leading-relaxed text-ink-400">{{ step.body }}</p>
           </li>

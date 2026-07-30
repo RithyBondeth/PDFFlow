@@ -63,7 +63,7 @@ function onSelect(event: Event) {
     @drop.prevent="onDrop"
   >
     <div
-      class="flex size-14 items-center justify-center rounded-full bg-accent-500/10 text-accent-400 transition-transform"
+      class="flex size-14 items-center justify-center rounded-full bg-accent-500/10 text-accent-600 transition-transform"
       :class="isOver && 'scale-110'"
     >
       <UIcon name="i-lucide-upload-cloud" class="size-7" />

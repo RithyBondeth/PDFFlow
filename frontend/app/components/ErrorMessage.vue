@@ -8,8 +8,8 @@ defineEmits<{ dismiss: [] }>()
     role="alert"
     class="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-left"
   >
-    <UIcon name="i-lucide-alert-circle" class="mt-0.5 size-5 shrink-0 text-red-400" />
-    <p class="flex-1 text-sm text-red-200">{{ message }}</p>
+    <UIcon name="i-lucide-alert-circle" class="mt-0.5 size-5 shrink-0 text-red-600" />
+    <p class="flex-1 text-sm text-red-700">{{ message }}</p>
     <UButton
       color="neutral"
       variant="ghost"

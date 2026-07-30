@@ -40,7 +40,7 @@ function onDrop(target: number) {
 
       <UIcon
         :name="FAMILY_ICONS[file.family] ?? 'i-lucide-file'"
-        class="size-5 shrink-0 text-accent-400"
+        class="size-5 shrink-0 text-accent-600"
       />
 
       <div class="min-w-0 flex-1">

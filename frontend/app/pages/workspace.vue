@@ -62,7 +62,7 @@ const savings = computed(() => {
 <template>
   <div class="mx-auto max-w-6xl px-6 py-12">
     <div class="mb-8 flex flex-wrap items-center gap-3">
-      <h1 class="text-2xl font-semibold text-white">Your workspace</h1>
+      <h1 class="text-2xl font-semibold text-ink-950">Your workspace</h1>
       <UBadge v-if="timeLeft" color="neutral" variant="subtle">
         <UIcon name="i-lucide-timer" class="mr-1 size-3.5" />
         Files deleted in {{ timeLeft }}
@@ -158,7 +158,7 @@ const savings = computed(() => {
 
           <div v-if="job.state.status === 'completed'" class="panel space-y-4 p-6">
             <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-file-check-2" class="size-8 text-green-400" />
+              <UIcon name="i-lucide-file-check-2" class="size-8 text-green-600" />
               <div class="min-w-0">
                 <p class="truncate font-medium text-ink-200">
                   {{ job.state.outputFilename }}
