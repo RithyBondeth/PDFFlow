@@ -1,0 +1,51 @@
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+/* Dark, high-contrast surface with a single cool accent — closer to Linear
+   than to a generic SaaS template. Everything else is greyscale so the
+   accent always means "this is the action". */
+@theme {
+  --color-ink-950: oklch(0.16 0.012 265);
+  --color-ink-900: oklch(0.2 0.014 265);
+  --color-ink-800: oklch(0.26 0.016 265);
+  --color-ink-700: oklch(0.36 0.016 265);
+  --color-ink-400: oklch(0.66 0.012 265);
+  --color-ink-200: oklch(0.88 0.006 265);
+
+  --color-accent-400: oklch(0.78 0.13 240);
+  --color-accent-500: oklch(0.68 0.16 250);
+  --color-accent-600: oklch(0.58 0.17 255);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --radius-panel: 14px;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(60rem 40rem at 50% -10rem, oklch(0.28 0.07 255 / 0.5), transparent 70%),
+    var(--color-ink-950);
+  color: var(--color-ink-200);
+  -webkit-font-smoothing: antialiased;
+}
+
+.panel {
+  background: color-mix(in oklch, var(--color-ink-900) 88%, transparent);
+  border: 1px solid var(--color-ink-800);
+  border-radius: var(--radius-panel);
+  backdrop-filter: blur(12px);
+}
+
+/* Respect users who ask for less movement — the upload and progress
+   animations are decoration, not information. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
