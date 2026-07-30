@@ -7,7 +7,14 @@ import type { Job, Operation, UploadResponse } from '~/types/api'
  * user-facing message, so components never have to inspect status codes.
  */
 export function useApi() {
-  const base = useRuntimeConfig().public.apiBase
+  const config = useRuntimeConfig()
+
+  // Browser-facing URLs always use the public base: they are either fetched by
+  // the browser or embedded in rendered HTML, so an internal hostname would be
+  // unreachable for the user.
+  const publicBase = config.public.apiBase
+  // Server-rendered fetches go direct to the API container.
+  const base = import.meta.server ? config.apiInternal : publicBase
 
   async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     let response: Response
@@ -37,7 +44,7 @@ export function useApi() {
 
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
-      xhr.open('POST', `${base}/upload`)
+      xhr.open('POST', `${publicBase}/upload`)
       xhr.responseType = 'json'
 
       xhr.upload.onprogress = (event) => {
@@ -75,7 +82,7 @@ export function useApi() {
         body: JSON.stringify({ operation, fileIds, options }),
       }),
     getJob: (id: string) => request<Job>(`/jobs/${id}`),
-    downloadUrl: (id: string) => `${base}/download/${id}`,
-    eventsUrl: (id: string) => `${base}/jobs/${id}/events`,
+    downloadUrl: (id: string) => `${publicBase}/download/${id}`,
+    eventsUrl: (id: string) => `${publicBase}/jobs/${id}/events`,
   }
 }

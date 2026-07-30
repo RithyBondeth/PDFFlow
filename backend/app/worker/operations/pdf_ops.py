@@ -184,6 +184,15 @@ def compress(ctx: OperationContext) -> OperationResult:
                 rasterized.replace(output)
 
     ctx.progress(90, "finishing")
+
+    # Some documents — already-optimised or very small ones — come out larger
+    # than they went in, because rewriting adds structural overhead. Handing
+    # the user a bigger file from a tool called "compress" is worse than
+    # doing nothing, so keep the original in that case.
+    if output.stat().st_size >= original_size:
+        output.unlink(missing_ok=True)
+        output.write_bytes(source.read_bytes())
+
     final_size = output.stat().st_size
     saved = max(0.0, (1 - final_size / original_size) * 100) if original_size else 0.0
     name = f"{_stem(ctx.original_names[0])}-compressed.pdf"
@@ -194,6 +203,7 @@ def compress(ctx: OperationContext) -> OperationResult:
             "originalSize": original_size,
             "compressedSize": final_size,
             "percentSaved": round(saved, 1),
+            "alreadyOptimized": final_size >= original_size,
             "level": level,
         },
     )

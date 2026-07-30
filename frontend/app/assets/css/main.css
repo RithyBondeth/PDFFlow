@@ -12,9 +12,17 @@
   --color-ink-400: oklch(0.66 0.012 265);
   --color-ink-200: oklch(0.88 0.006 265);
 
+  --color-accent-50: oklch(0.97 0.015 250);
+  --color-accent-100: oklch(0.93 0.035 250);
+  --color-accent-200: oklch(0.88 0.06 248);
+  --color-accent-300: oklch(0.83 0.095 245);
   --color-accent-400: oklch(0.78 0.13 240);
   --color-accent-500: oklch(0.68 0.16 250);
   --color-accent-600: oklch(0.58 0.17 255);
+  --color-accent-700: oklch(0.48 0.15 257);
+  --color-accent-800: oklch(0.38 0.12 258);
+  --color-accent-900: oklch(0.30 0.09 259);
+  --color-accent-950: oklch(0.22 0.06 260);
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   --radius-panel: 14px;

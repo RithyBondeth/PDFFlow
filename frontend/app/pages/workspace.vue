@@ -52,8 +52,10 @@ function startOver() {
 }
 
 const savings = computed(() => {
-  const result = job.state.result as Record<string, number>
-  return typeof result.percentSaved === 'number' ? result : null
+  const result = job.state.result as Record<string, number | boolean>
+  return typeof result.percentSaved === 'number'
+    ? (result as { percentSaved: number; originalSize: number; alreadyOptimized: boolean })
+    : null
 })
 </script>
 
@@ -163,7 +165,10 @@ const savings = computed(() => {
                 </p>
                 <p class="text-sm text-ink-400">
                   {{ formatBytes(job.state.outputSize ?? 0) }}
-                  <template v-if="savings">
+                  <template v-if="savings?.alreadyOptimized">
+                    · already optimised — no reduction possible
+                  </template>
+                  <template v-else-if="savings">
                     · {{ savings.percentSaved }}% smaller than
                     {{ formatBytes(savings.originalSize) }}
                   </template>

@@ -7,6 +7,11 @@ export default defineNuxtConfig({
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
+    // Server-only. Relative URLs have no origin during SSR, so server-side
+    // fetches must address the API container directly. Never exposed to the
+    // browser, which reaches the same API through nginx on the public base.
+    apiInternal: process.env.NUXT_API_INTERNAL || 'http://api:8000/api',
+
     public: {
       // Behind nginx the API is same-origin, so a relative base is correct in
       // production. `nuxt dev` overrides it via NUXT_PUBLIC_API_BASE.

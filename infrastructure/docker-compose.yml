@@ -122,7 +122,10 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
     environment:
+      # Browser traffic goes through nginx (relative), server-side rendering
+      # talks to the API container directly.
       NUXT_PUBLIC_API_BASE: /api
+      NUXT_API_INTERNAL: http://api:8000/api
       NITRO_PORT: "3000"
       NITRO_HOST: "0.0.0.0"
     depends_on:

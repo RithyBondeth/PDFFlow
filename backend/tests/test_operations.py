@@ -113,3 +113,25 @@ def test_compress_reports_savings(tmp_path: Path, pdf_file: Path) -> None:
 def test_compress_rejects_unknown_level(tmp_path: Path, pdf_file: Path) -> None:
     with pytest.raises(ValidationError):
         get_handler("compress")(make_context(tmp_path, [pdf_file], level="extreme"))
+
+
+def test_compress_never_returns_a_file_larger_than_the_original(
+    tmp_path: Path, pdf_file: Path
+) -> None:
+    """A tiny or already-optimised PDF grows when rewritten. Returning that
+    from a tool called "compress" is worse than doing nothing."""
+    original_size = pdf_file.stat().st_size
+
+    result = get_handler("compress")(make_context(tmp_path, [pdf_file], level="high"))
+
+    assert result.path.stat().st_size <= original_size
+    assert result.metadata["compressedSize"] <= result.metadata["originalSize"]
+    assert result.metadata["percentSaved"] >= 0
+
+
+def test_compress_result_is_always_a_readable_pdf(
+    tmp_path: Path, pdf_file: Path
+) -> None:
+    result = get_handler("compress")(make_context(tmp_path, [pdf_file], level="medium"))
+
+    assert len(PdfReader(str(result.path)).pages) == 3
