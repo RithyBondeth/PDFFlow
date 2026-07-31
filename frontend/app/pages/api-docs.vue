@@ -82,7 +82,7 @@ curl -s ${EXAMPLE_HOST}/api/health`,
         class="font-display mt-5 text-4xl font-bold leading-[1.02] tracking-[-0.025em] text-ink sm:text-[3.25rem]"
       >
         Four calls, and the file<br>
-        <span class="mark">deletes itself.</span>
+        <span class="mark mark-draw" style="--enter-delay: 0.35s">deletes itself.</span>
       </h1>
       <p class="mt-5 text-pretty text-lg leading-relaxed text-ink-muted">
         Upload, queue a job, follow it, download the result. There are no keys to

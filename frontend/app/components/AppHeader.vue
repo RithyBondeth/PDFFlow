@@ -34,17 +34,24 @@ function isCurrent(to: string) {
       </NuxtLink>
 
       <nav class="ml-6 hidden items-center gap-6 sm:flex" aria-label="Main">
+        <!-- The underline is always in the DOM and scaled in from the left, so
+             moving between sections animates rather than snapping. A v-if would
+             give it nothing to transition from. -->
         <NuxtLink
           v-for="link in links"
           :key="link.to"
           :to="link.to"
-          class="relative py-1 text-sm transition-colors duration-200"
+          class="group relative py-1 text-sm transition-colors duration-200"
           :class="isCurrent(link.to) ? 'text-ink' : 'text-ink-muted hover:text-ink'"
         >
           {{ link.label }}
           <span
-            v-if="isCurrent(link.to)"
-            class="absolute -bottom-0.5 left-0 right-0 h-0.5 rounded-full bg-accent-500"
+            class="absolute -bottom-0.5 left-0 right-0 h-0.5 origin-left rounded-full bg-accent-500 transition-transform duration-300 ease-out"
+            :class="
+              isCurrent(link.to)
+                ? 'scale-x-100'
+                : 'scale-x-0 group-hover:scale-x-100'
+            "
             aria-hidden="true"
           />
         </NuxtLink>

@@ -1,8 +1,23 @@
 <script setup lang="ts">
 import type { Operation } from '~/types/api'
 
-const props = defineProps<{ operation: Operation; selected?: boolean }>()
+const props = withDefaults(
+  defineProps<{
+    operation: Operation
+    selected?: boolean
+    /** Position in its row, used to stagger the scroll reveal left to right. */
+    column?: number
+  }>(),
+  { column: 0 },
+)
 defineEmits<{ select: [Operation] }>()
+
+// Shifts where in the element's entry this card's reveal runs, so a row arrives
+// in sequence instead of all at once.
+const revealRange = computed(() => ({
+  '--reveal-from': `${props.column * 7}%`,
+  '--reveal-to': `${50 + props.column * 7}%`,
+}))
 
 const ICONS: Record<string, string> = {
   merge: 'i-lucide-combine',
@@ -26,11 +41,12 @@ const icon = computed(() => ICONS[props.operation.key] ?? 'i-lucide-wand-2')
 <template>
   <button
     type="button"
-    class="panel reveal group flex w-full flex-col gap-2.5 p-4 text-left transition-colors duration-200"
+    class="panel reveal group flex w-full flex-col gap-2.5 p-4 text-left"
     :class="[
       selected ? 'border-accent-500 bg-accent-500/[0.04]' : 'hover:border-hairline-strong',
-      operation.implemented ? '' : 'cursor-not-allowed opacity-50',
+      operation.implemented ? 'lift' : 'cursor-not-allowed opacity-50',
     ]"
+    :style="revealRange"
     :disabled="!operation.implemented"
     :aria-pressed="selected"
     @click="$emit('select', operation)"
