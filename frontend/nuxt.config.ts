@@ -1,3 +1,7 @@
+// Where the full stack is reachable while running `nuxt dev`. Only nginx is
+// published to the host, so this is the nginx port, not the API container's.
+const devStackOrigin = process.env.NUXT_DEV_STACK_ORIGIN || 'http://localhost:8080'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: true },
@@ -41,6 +45,16 @@ export default defineNuxtConfig({
   // hydrated on the client only where a tool actually needs interactivity.
   nitro: {
     compressPublicAssets: true,
+
+    // FastAPI serves the docs, and in the real deployment nginx routes them
+    // there. `nuxt dev` runs the Nuxt app alone, so without this the header's
+    // API link 404s on the dev server even though it works in production.
+    // devProxy is dev-only — nginx still owns these paths once deployed.
+    devProxy: {
+      '/docs': { target: `${devStackOrigin}/docs`, changeOrigin: true },
+      '/redoc': { target: `${devStackOrigin}/redoc`, changeOrigin: true },
+      '/openapi.json': { target: `${devStackOrigin}/openapi.json`, changeOrigin: true },
+    },
   },
 
   typescript: { strict: true, typeCheck: false },
