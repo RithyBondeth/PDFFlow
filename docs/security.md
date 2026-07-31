@@ -122,8 +122,13 @@ secrets.
 
 ## Deployment checklist
 
-- [ ] TLS terminated; port 80 redirects.
-- [ ] `POSTGRES_PASSWORD` changed from the example value.
+- [ ] Started with `docker-compose.prod.yml` **and** `--env-file .env`. Without
+      the flag Compose reads no `.env` at all and silently uses the
+      development defaults, `POSTGRES_PASSWORD` among them.
+- [ ] TLS terminated; port 80 redirects; HSTS present on a real response
+      (`curl -sI https://<host>/ | grep -i strict-transport`).
+- [ ] `POSTGRES_PASSWORD` changed from the example value — and verified inside
+      the container, not just in the file.
 - [ ] `CORS_ORIGINS` set to the real origin only — not a wildcard.
 - [ ] `DEBUG=false`, `ENVIRONMENT=production`.
 - [ ] Storage volume is tmpfs, or on an encrypted disk if it must be durable.
