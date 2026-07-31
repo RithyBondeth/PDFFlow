@@ -8,6 +8,13 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/ui', '@pinia/nuxt', '@vueuse/nuxt'],
 
+  // `/api` belongs to FastAPI at the reverse proxy. Nuxt Icon's default
+  // fallback endpoint lives there too, which made every icon request miss the
+  // frontend in production even when the collection was bundled locally.
+  icon: {
+    localApiEndpoint: '/_nuxt_icon',
+  },
+
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
@@ -54,7 +61,7 @@ export default defineNuxtConfig({
         },
         { name: 'color-scheme', content: 'light dark' },
       ],
-      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg?v=2' }],
     },
   },
 

@@ -48,6 +48,13 @@ function onSelect(event: Event) {
   if (files.length) emit('files', files)
   target.value = '' // allow re-picking the same file
 }
+
+function openPicker() {
+  if (!props.disabled) input.value?.click()
+}
+
+onMounted(() => window.addEventListener('pdfflow:choose-files', openPicker))
+onBeforeUnmount(() => window.removeEventListener('pdfflow:choose-files', openPicker))
 </script>
 
 <template>
@@ -87,7 +94,7 @@ function onSelect(event: Event) {
           color="primary"
           size="lg"
           icon="i-lucide-folder-open"
-          @click="input?.click()"
+          @click="openPicker"
         >
           Choose files
         </UButton>
