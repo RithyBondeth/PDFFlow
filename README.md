@@ -183,6 +183,7 @@ Every value has a working default; see [`.env.example`](.env.example).
 | `CORS_ORIGINS` | localhost | Comma-separated allow-list |
 | `RATE_LIMIT_UPLOADS` | `30/minute` | Per-IP upload budget |
 | `RATE_LIMIT_JOBS` | `60/minute` | Per-IP job-creation budget |
+| `TRUSTED_PROXIES` | loopback + private ranges | Networks whose `X-Forwarded-For` is believed |
 
 ## API
 
@@ -270,7 +271,10 @@ exposing it:
    a load balancer) and redirect port 80.
 2. **Change `POSTGRES_PASSWORD`** and set `ENVIRONMENT=production`,
    `DEBUG=false`.
-3. **Set `CORS_ORIGINS`** to your real origin only.
+3. **Set `CORS_ORIGINS`** to your real origin only, and **`TRUSTED_PROXIES`**
+   to the network your load balancer actually sits in. Leaving it wider than
+   necessary means anything inside that range can forge a client IP and slip
+   the rate limits.
 4. **Keep exactly one `beat` replica.** Scale `worker` and `api` freely; a
    second beat would double every cleanup sweep.
 5. **Size the tmpfs volume** for your traffic — it is RAM. The default 2 GB

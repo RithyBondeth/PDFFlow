@@ -97,6 +97,55 @@ def test_rate_limited_routes_inject_their_headers(client, pdf_bytes):
     assert "x-ratelimit-remaining" in response.headers
 
 
+def arriving_from(app, peer: str):
+    """Wrap an ASGI app so requests look like they came from `peer`.
+
+    TestClient hardcodes the peer to "testclient", which is not an address and
+    so is never trusted — exactly the path that ignores forwarding headers.
+    Reaching the trusting path needs a real proxy address on the connection.
+    """
+
+    async def shim(scope, receive, send):
+        if scope["type"] == "http":
+            scope = {**scope, "client": (peer, 51000)}
+        await app(scope, receive, send)
+
+    return shim
+
+
+def test_rotating_forwarded_for_cannot_slip_the_upload_limit(client, pdf_bytes):
+    """The rate limiter must not be escapable with a header.
+
+    The connection comes from a trusted-range peer, so the forwarding header
+    *is* consulted — and each request claims a different origin. Because nginx
+    appends the real peer rather than replacing the header, the caller's value
+    sits to the left of it and must be ignored. Reading the left instead would
+    hand every request its own fresh bucket, and this would never reach 429.
+
+    `client` has already redirected the limiter to in-memory counters; this
+    reuses that setup with a different peer address.
+    """
+    from app.main import app
+
+    limit = 30  # RATE_LIMIT_UPLOADS, the default
+    attacker = "203.0.113.7"
+    statuses = []
+    with TestClient(arriving_from(app, "172.18.0.5")) as proxied:
+        for n in range(limit + 1):
+            # What nginx's $proxy_add_x_forwarded_for actually produces: the
+            # caller's own header, with the true peer appended to the right.
+            forwarded = f"198.51.100.{n}, {attacker}"
+            response = proxied.post(
+                "/api/upload",
+                files={"files": ("doc.pdf", pdf_bytes, "application/pdf")},
+                headers={"X-Forwarded-For": forwarded},
+            )
+            statuses.append(response.status_code)
+
+    assert statuses[:limit] == [200] * limit
+    assert statuses[limit] == 429
+
+
 def test_config_exposes_limits(client):
     body = client.get("/api/config").json()
     assert body["maxUploadBytes"] > 0

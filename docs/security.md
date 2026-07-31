@@ -55,7 +55,30 @@ exposed directly:
 
 - Nginx: `limit_req` zones, 30 r/m for uploads and 300 r/m general, per IP.
 - Application: slowapi with counters in Redis, so replicas share one budget.
-  The key is the first entry of `X-Forwarded-For` as set by our own proxy.
+
+Which IP the application layer keys on is the whole game, and it is easy to
+get backwards. Nginx forwards with `$proxy_add_x_forwarded_for`, which
+*appends* the real peer to any `X-Forwarded-For` the caller already sent. A
+request carrying `X-Forwarded-For: 1.2.3.4` therefore arrives as
+`1.2.3.4, <real peer>` — so **reading the left of that list keys the limiter
+on a caller-chosen value**, and rotating it per request slips every limit.
+This is precisely the bug that shipped in Phase 1.
+
+The rule now is:
+
+- Forwarding headers are consulted **only** when the connection itself came
+  from a network in `TRUSTED_PROXIES`. Pointed straight at the API, the peer
+  address is used and headers are ignored — so bypassing nginx cannot be used
+  to forge an identity.
+- From a trusted peer, the client is the **rightmost** entry that is not
+  itself a trusted proxy. That is correct for a chain (load balancer → nginx →
+  api) as long as each hop is listed, and it cannot be shifted by padding the
+  header with forged hops, including ones that look private.
+
+Covered by `tests/test_rate_limit_key.py` and
+`tests/test_api.py::test_rotating_forwarded_for_cannot_slip_the_upload_limit`,
+which drives 31 uploads through the real stack with a different forged origin
+each time and asserts the 31st is still refused.
 
 Storage abuse is bounded by the TTL: nothing survives 30 minutes, and the
 default storage volume is a 2 GB tmpfs, so the worst case is bounded by RAM

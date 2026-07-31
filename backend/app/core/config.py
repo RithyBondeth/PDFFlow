@@ -63,11 +63,29 @@ class Settings(BaseSettings):
     rate_limit_uploads: str = Field(default="30/minute")
     rate_limit_jobs: str = Field(default="60/minute")
 
-    @field_validator("cors_origins", mode="before")
+    # Networks whose forwarding headers we believe. A request arriving from
+    # anywhere else is rate-limited on its peer address, so pointing a client
+    # straight at the API cannot be used to forge a client IP.
+    #
+    # The default covers loopback plus the private ranges Docker and
+    # Kubernetes hand out, which is where our own nginx sits. Set it to the
+    # load balancer's range in production; set it empty to trust no header.
+    trusted_proxies: Annotated[list[str], NoDecode] = Field(
+        default=[
+            "127.0.0.0/8",
+            "::1/128",
+            "10.0.0.0/8",
+            "172.16.0.0/12",
+            "192.168.0.0/16",
+            "fc00::/7",
+        ]
+    )
+
+    @field_validator("cors_origins", "trusted_proxies", mode="before")
     @classmethod
-    def _split_origins(cls, value: object) -> object:
+    def _split_csv(cls, value: object) -> object:
         if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
+            return [entry.strip() for entry in value.split(",") if entry.strip()]
         return value
 
     def ensure_directories(self) -> None:
