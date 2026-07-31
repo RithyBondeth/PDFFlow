@@ -34,7 +34,7 @@ const COMPRESSION_LEVELS = [
 
 <template>
   <div class="panel space-y-5 p-5 sm:p-6">
-    <h2 class="font-data text-xs uppercase tracking-[0.2em] text-paper-faint">
+    <h2 class="font-data text-xs uppercase tracking-[0.2em] text-ink-faint">
       Options
     </h2>
 
@@ -44,14 +44,14 @@ const COMPRESSION_LEVELS = [
         v-for="level in COMPRESSION_LEVELS"
         :key="level.value"
         type="button"
-        class="rounded-[10px] border p-3 text-left transition-colors duration-200"
+        class="rounded-md border p-3 text-left transition-colors duration-200"
         :class="options.level === level.value
-          ? 'border-accent-400/60 bg-accent-500/10'
-          : 'border-line hover:border-line-lit'"
+          ? 'border-accent-500 bg-accent-500/10'
+          : 'border-hairline hover:border-hairline-strong'"
         @click="set('level', level.value)"
       >
-        <span class="block font-medium text-paper">{{ level.label }}</span>
-        <span class="mt-0.5 block text-xs leading-snug text-paper-dim">{{ level.hint }}</span>
+        <span class="block font-medium text-ink">{{ level.label }}</span>
+        <span class="mt-0.5 block text-xs leading-snug text-ink-muted">{{ level.hint }}</span>
       </button>
     </div>
 
@@ -117,7 +117,7 @@ const COMPRESSION_LEVELS = [
       />
     </UFormField>
 
-    <p v-else class="text-sm text-paper-dim">
+    <p v-else class="text-sm text-ink-muted">
       This tool has no options — just run it.
     </p>
   </div>

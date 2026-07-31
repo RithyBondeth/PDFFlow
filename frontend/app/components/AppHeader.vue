@@ -1,47 +1,59 @@
 <script setup lang="ts">
+const route = useRoute()
+
 const links = [
   { label: 'Tools', to: '/#tools' },
   { label: 'How it works', to: '/#lifecycle' },
   { label: 'API', to: '/api-docs' },
 ] as const
+
+/**
+ * Underlines where you are, the way Reahu's nav does.
+ *
+ * Section links only count as current when their hash is the one in the URL —
+ * matching on the path alone lit up every hash link at once, since they all
+ * point at the same page.
+ */
+function isCurrent(to: string) {
+  const [path, hash] = to.split('#')
+  if (hash) return route.path === '/' && route.hash === `#${hash}`
+  return route.path === path
+}
 </script>
 
 <template>
-  <header class="sticky top-0 z-50 border-b border-line/80 bg-canvas/70 backdrop-blur-xl">
-    <div class="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5 sm:px-6">
-      <NuxtLink to="/" class="group flex items-center gap-2.5" aria-label="PDFFlow home">
-        <!-- The mark is a sheet under the safelight: a lit top edge, a body that
-             fades into the room. -->
-        <span
-          class="relative flex size-8 items-center justify-center rounded-[7px] border border-accent-500/40 bg-gradient-to-b from-accent-400/25 to-transparent text-accent-300 transition-colors duration-200 group-hover:border-accent-400/70"
-        >
+  <header class="sticky top-0 z-50 border-b border-hairline bg-canvas/85 backdrop-blur-xl">
+    <div class="mx-auto flex h-16 max-w-6xl items-center gap-4 px-5 sm:px-6">
+      <NuxtLink to="/" class="flex items-center gap-2.5" aria-label="PDFFlow home">
+        <span class="flex size-7 items-center justify-center rounded-[5px] bg-accent-500 text-white">
           <UIcon name="i-lucide-layers" class="size-4" />
         </span>
-        <span class="font-display text-lg tracking-tight">
-          <span class="font-extrabold text-paper">PDF</span><span class="font-medium text-paper-faint">Flow</span>
+        <span class="font-display text-[17px] tracking-tight">
+          <span class="font-bold text-ink">PDF</span><span class="font-normal text-ink-faint">Flow</span>
         </span>
       </NuxtLink>
 
-      <nav class="ml-auto hidden items-center gap-1 text-sm sm:flex">
-        <UButton
+      <nav class="ml-6 hidden items-center gap-6 sm:flex" aria-label="Main">
+        <NuxtLink
           v-for="link in links"
           :key="link.to"
           :to="link.to"
-          variant="ghost"
-          color="neutral"
-          class="text-paper-dim hover:text-paper"
+          class="relative py-1 text-sm transition-colors duration-200"
+          :class="isCurrent(link.to) ? 'text-ink' : 'text-ink-muted hover:text-ink'"
         >
           {{ link.label }}
-        </UButton>
+          <span
+            v-if="isCurrent(link.to)"
+            class="absolute -bottom-0.5 left-0 right-0 h-0.5 rounded-full bg-accent-500"
+            aria-hidden="true"
+          />
+        </NuxtLink>
       </nav>
 
-      <UButton
-        to="/#upload"
-        color="primary"
-        class="ml-auto shadow-[0_0_24px_-6px_oklch(0.772_0.155_76/0.55)] hover:shadow-[0_0_30px_-4px_oklch(0.772_0.155_76/0.7)] sm:ml-0"
-      >
-        Add a file
-      </UButton>
+      <div class="ml-auto flex items-center gap-2">
+        <ThemeToggle />
+        <UButton to="/#upload" color="primary" size="sm">Add a file</UButton>
+      </div>
     </div>
   </header>
 </template>

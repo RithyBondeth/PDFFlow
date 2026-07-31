@@ -79,12 +79,12 @@ curl -s ${EXAMPLE_HOST}/api/health`,
     <header class="max-w-2xl">
       <p class="eyebrow">API reference · v0.1.0</p>
       <h1
-        class="font-display mt-5 text-balance text-4xl font-extrabold leading-[1] tracking-[-0.02em] text-paper sm:text-5xl"
+        class="font-display mt-5 text-4xl font-bold leading-[1.02] tracking-[-0.025em] text-ink sm:text-[3.25rem]"
       >
-        Four calls, and the file
-        <span class="lit">deletes itself</span>
+        Four calls, and the file<br>
+        <span class="mark">deletes itself.</span>
       </h1>
-      <p class="mt-5 text-pretty text-lg leading-relaxed text-paper-dim">
+      <p class="mt-5 text-pretty text-lg leading-relaxed text-ink-muted">
         Upload, queue a job, follow it, download the result. There are no keys to
         request and no accounts to create — the same guarantees the web app gets
         are the ones you get.
@@ -104,15 +104,15 @@ curl -s ${EXAMPLE_HOST}/api/health`,
                 class="block border-l py-1 pl-3 text-sm transition-colors duration-150"
                 :class="
                   active === section.id
-                    ? 'border-accent-400 text-accent-300'
-                    : 'border-line text-paper-dim hover:border-line-lit hover:text-paper'
+                    ? 'border-accent-400 text-accent-ink'
+                    : 'border-hairline text-ink-muted hover:border-hairline-strong hover:text-ink'
                 "
               >{{ section.label }}</a>
             </li>
           </ul>
 
           <div v-for="group in GROUPS" :key="group.id">
-            <p class="font-data mb-1.5 text-[10px] uppercase tracking-[0.2em] text-paper-faint">
+            <p class="font-data mb-1.5 text-[10px] uppercase tracking-[0.2em] text-ink-faint">
               {{ group.label }}
             </p>
             <ul class="space-y-1">
@@ -122,8 +122,8 @@ curl -s ${EXAMPLE_HOST}/api/health`,
                   class="block border-l py-1 pl-3 text-sm transition-colors duration-150"
                   :class="
                     active === endpoint.id
-                      ? 'border-accent-400 text-accent-300'
-                      : 'border-line text-paper-dim hover:border-line-lit hover:text-paper'
+                      ? 'border-accent-400 text-accent-ink'
+                      : 'border-hairline text-ink-muted hover:border-hairline-strong hover:text-ink'
                   "
                 >{{ endpoint.summary }}</a>
               </li>
@@ -137,8 +137,8 @@ curl -s ${EXAMPLE_HOST}/api/health`,
                 class="block border-l py-1 pl-3 text-sm transition-colors duration-150"
                 :class="
                   active === section.id
-                    ? 'border-accent-400 text-accent-300'
-                    : 'border-line text-paper-dim hover:border-line-lit hover:text-paper'
+                    ? 'border-accent-400 text-accent-ink'
+                    : 'border-hairline text-ink-muted hover:border-hairline-strong hover:text-ink'
                 "
               >{{ section.label }}</a>
             </li>
@@ -149,10 +149,10 @@ curl -s ${EXAMPLE_HOST}/api/health`,
       <div class="min-w-0 space-y-16">
         <!-- ==================== Overview ==================== -->
         <section id="overview" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-paper">
+          <h2 class="font-display text-2xl font-bold tracking-[-0.02em] text-ink">
             Overview
           </h2>
-          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-paper-dim">
+          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-ink-muted">
             Every response is JSON except a download, which is the file itself.
             Field names are camelCase going out; request bodies accept either
             camelCase or snake_case. Timestamps are ISO 8601 in UTC.
@@ -167,19 +167,19 @@ curl -s ${EXAMPLE_HOST}/api/health`,
               { term: 'No authentication', detail: 'Nothing to send. Rate limits are per client address instead of per key.' },
               { term: 'Nothing retained', detail: 'Inputs are deleted when a job ends, results within 30 minutes. There is no listing endpoint.' },
               { term: 'CORS', detail: 'Locked to the configured origins. Credentials are never accepted — there are none.' },
-            ]" :key="item.term" class="border-t border-line pt-3">
-              <dt class="font-medium text-paper">{{ item.term }}</dt>
-              <dd class="mt-1 text-sm leading-relaxed text-paper-dim">{{ item.detail }}</dd>
+            ]" :key="item.term" class="border-t border-hairline pt-3">
+              <dt class="font-medium text-ink">{{ item.term }}</dt>
+              <dd class="mt-1 text-sm leading-relaxed text-ink-muted">{{ item.detail }}</dd>
             </div>
           </dl>
         </section>
 
         <!-- ==================== Quickstart ==================== -->
         <section id="quickstart" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-paper">
+          <h2 class="font-display text-2xl font-bold tracking-[-0.02em] text-ink">
             Quickstart
           </h2>
-          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-paper-dim">
+          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-ink-muted">
             The whole flow, start to finish. Swap in your own host and file, then
             paste the four commands in order.
           </p>
@@ -191,11 +191,11 @@ curl -s ${EXAMPLE_HOST}/api/health`,
         <!-- ==================== Endpoints ==================== -->
         <section v-for="group in GROUPS" :key="group.id" class="space-y-4">
           <div class="flex items-baseline gap-4">
-            <h2 class="font-data text-xs uppercase tracking-[0.2em] text-paper">
+            <h2 class="font-data text-xs uppercase tracking-[0.2em] text-ink">
               {{ group.label }}
             </h2>
-            <span class="hidden text-sm text-paper-faint sm:inline">{{ group.blurb }}</span>
-            <span class="h-px flex-1 bg-line" aria-hidden="true" />
+            <span class="hidden text-sm text-ink-faint sm:inline">{{ group.blurb }}</span>
+            <span class="h-px flex-1 bg-hairline" aria-hidden="true" />
           </div>
 
           <ApiEndpoint
@@ -207,10 +207,10 @@ curl -s ${EXAMPLE_HOST}/api/health`,
 
         <!-- ==================== Lifecycle ==================== -->
         <section id="lifecycle" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-paper">
+          <h2 class="font-display text-2xl font-bold tracking-[-0.02em] text-ink">
             Job lifecycle
           </h2>
-          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-paper-dim">
+          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-ink-muted">
             A job moves through one of five statuses. Three of them are terminal:
             once you see one, stop asking.
           </p>
@@ -225,15 +225,15 @@ curl -s ${EXAMPLE_HOST}/api/health`,
                 <dt class="flex items-center gap-2">
                   <span
                     class="size-1.5 rounded-full"
-                    :class="status.terminal ? 'bg-fixer' : 'bg-accent-400'"
+                    :class="status.terminal ? 'bg-good' : 'bg-accent-400'"
                     aria-hidden="true"
                   />
-                  <code class="font-data text-[13px] text-paper">{{ status.name }}</code>
-                  <span v-if="status.terminal" class="font-data text-[10px] uppercase tracking-[0.14em] text-paper-faint">
+                  <code class="font-data text-[13px] text-ink">{{ status.name }}</code>
+                  <span v-if="status.terminal" class="font-data text-[10px] uppercase tracking-[0.14em] text-ink-faint">
                     terminal
                   </span>
                 </dt>
-                <dd class="text-sm leading-relaxed text-paper-dim">
+                <dd class="text-sm leading-relaxed text-ink-muted">
                   <DocProse :text="status.description" />
                 </dd>
               </div>
@@ -242,35 +242,35 @@ curl -s ${EXAMPLE_HOST}/api/health`,
             <!-- Stages are a genuine ordered walk, so they get the rail. -->
             <div class="mt-8">
               <div class="mb-3 flex items-baseline gap-3">
-                <h3 class="font-data text-[11px] uppercase tracking-[0.18em] text-paper-faint">
+                <h3 class="font-data text-[11px] uppercase tracking-[0.18em] text-ink-faint">
                   Stages, in order
                 </h3>
-                <span class="h-px flex-1 bg-line" aria-hidden="true" />
+                <span class="h-px flex-1 bg-hairline" aria-hidden="true" />
               </div>
               <div class="fuse mb-5 hidden sm:block" style="--burn: 100%" aria-hidden="true" />
               <ol class="grid gap-5 sm:grid-cols-3 lg:grid-cols-5">
                 <li
                   v-for="stage in JOB_STAGES"
                   :key="stage.name"
-                  class="relative border-l border-line pl-3 sm:border-l-0 sm:pl-0"
+                  class="relative border-l border-hairline pl-3 sm:border-l-0 sm:pl-0"
                 >
                   <span
-                    class="absolute -top-5 left-0 hidden h-3 w-px bg-line-lit sm:block"
+                    class="absolute -top-5 left-0 hidden h-3 w-px bg-hairline-strong sm:block"
                     aria-hidden="true"
                   />
-                  <p class="font-data text-xs tabular-nums text-accent-300">{{ stage.at }}</p>
-                  <code class="font-data mt-1.5 block text-[13px] text-paper">{{ stage.name }}</code>
-                  <p class="mt-1 text-sm leading-relaxed text-paper-dim">{{ stage.description }}</p>
+                  <p class="font-data text-xs tabular-nums text-accent-ink">{{ stage.at }}</p>
+                  <code class="font-data mt-1.5 block text-[13px] text-ink">{{ stage.name }}</code>
+                  <p class="mt-1 text-sm leading-relaxed text-ink-muted">{{ stage.description }}</p>
                 </li>
               </ol>
             </div>
 
             <div class="mt-8">
               <div class="mb-3 flex items-baseline gap-3">
-                <h3 class="font-data text-[11px] uppercase tracking-[0.18em] text-paper-faint">
+                <h3 class="font-data text-[11px] uppercase tracking-[0.18em] text-ink-faint">
                   SSE event names
                 </h3>
-                <span class="h-px flex-1 bg-line" aria-hidden="true" />
+                <span class="h-px flex-1 bg-hairline" aria-hidden="true" />
               </div>
               <dl class="space-y-2.5">
                 <div
@@ -278,8 +278,8 @@ curl -s ${EXAMPLE_HOST}/api/health`,
                   :key="event.name"
                   class="grid gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,11rem)_1fr]"
                 >
-                  <dt><code class="font-data text-[13px] text-paper">{{ event.name }}</code></dt>
-                  <dd class="text-sm leading-relaxed text-paper-dim">
+                  <dt><code class="font-data text-[13px] text-ink">{{ event.name }}</code></dt>
+                  <dd class="text-sm leading-relaxed text-ink-muted">
                     <DocProse :text="event.description" />
                   </dd>
                 </div>
@@ -290,14 +290,14 @@ curl -s ${EXAMPLE_HOST}/api/health`,
 
         <!-- ==================== Errors ==================== -->
         <section id="errors" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-paper">
+          <h2 class="font-display text-2xl font-bold tracking-[-0.02em] text-ink">
             Errors
           </h2>
-          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-paper-dim">
-            Every failure uses the same envelope. Match on <code class="font-data text-[13px] text-paper">code</code>,
+          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-ink-muted">
+            Every failure uses the same envelope. Match on <code class="font-data text-[13px] text-ink">code</code>,
             not on the message — messages are written for people and will change.
-            <code class="font-data text-[13px] text-paper">requestId</code> also comes back
-            as the <code class="font-data text-[13px] text-paper">X-Request-Id</code> header, and quoting
+            <code class="font-data text-[13px] text-ink">requestId</code> also comes back
+            as the <code class="font-data text-[13px] text-ink">X-Request-Id</code> header, and quoting
             it is how a failure gets traced in the logs.
           </p>
 
@@ -313,10 +313,10 @@ curl -s ${EXAMPLE_HOST}/api/health`,
                 class="grid gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,15rem)_1fr]"
               >
                 <dt class="flex items-baseline gap-2.5">
-                  <span class="font-data text-xs tabular-nums text-accent-300">{{ error.status }}</span>
-                  <code class="font-data text-[13px] text-paper">{{ error.code }}</code>
+                  <span class="font-data text-xs tabular-nums text-accent-ink">{{ error.status }}</span>
+                  <code class="font-data text-[13px] text-ink">{{ error.code }}</code>
                 </dt>
-                <dd class="text-sm leading-relaxed text-paper-dim">
+                <dd class="text-sm leading-relaxed text-ink-muted">
                   <DocProse :text="error.description" />
                 </dd>
               </div>
@@ -326,37 +326,37 @@ curl -s ${EXAMPLE_HOST}/api/health`,
 
         <!-- ==================== Limits ==================== -->
         <section id="limits" class="scroll-mt-24">
-          <h2 class="font-display text-2xl font-extrabold tracking-[-0.02em] text-paper">
+          <h2 class="font-display text-2xl font-bold tracking-[-0.02em] text-ink">
             Limits
           </h2>
-          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-paper-dim">
+          <p class="mt-3 max-w-2xl text-pretty leading-relaxed text-ink-muted">
             These are the defaults. They are deployment settings, so read
-            <code class="font-data text-[13px] text-paper">/api/config</code> at startup rather
+            <code class="font-data text-[13px] text-ink">/api/config</code> at startup rather
             than hardcoding them.
           </p>
 
           <dl class="mt-5 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
             <div v-for="limit in LIMITS" :key="limit.label" class="panel p-4">
-              <dt class="font-data text-[10px] uppercase tracking-[0.16em] text-paper-faint">
+              <dt class="font-data text-[10px] uppercase tracking-[0.16em] text-ink-faint">
                 {{ limit.label }}
               </dt>
-              <dd class="font-data mt-1.5 text-lg tabular-nums text-paper">{{ limit.value }}</dd>
-              <dd class="mt-0.5 text-xs leading-snug text-paper-faint">{{ limit.note }}</dd>
+              <dd class="font-data mt-1.5 text-lg tabular-nums text-ink">{{ limit.value }}</dd>
+              <dd class="mt-0.5 text-xs leading-snug text-ink-faint">{{ limit.note }}</dd>
             </div>
           </dl>
 
           <div class="panel mt-4 p-5 sm:p-6">
             <div class="mb-3 flex items-baseline gap-3">
-              <h3 class="font-data text-[11px] uppercase tracking-[0.18em] text-paper-faint">
+              <h3 class="font-data text-[11px] uppercase tracking-[0.18em] text-ink-faint">
                 Accepted file types
               </h3>
-              <span class="h-px flex-1 bg-line" aria-hidden="true" />
+              <span class="h-px flex-1 bg-hairline" aria-hidden="true" />
             </div>
-            <p class="mb-4 max-w-2xl text-sm leading-relaxed text-paper-dim">
+            <p class="mb-4 max-w-2xl text-sm leading-relaxed text-ink-muted">
               The extension has to be on this list <em>and</em> the file's leading
-              bytes have to match it. A <code class="font-data text-[13px] text-paper">.pdf</code>
+              bytes have to match it. A <code class="font-data text-[13px] text-ink">.pdf</code>
               that is really a ZIP is rejected with
-              <code class="font-data text-[13px] text-paper">unsupported_file_type</code>.
+              <code class="font-data text-[13px] text-ink">unsupported_file_type</code>.
             </p>
             <dl class="space-y-2.5">
               <div
@@ -364,8 +364,8 @@ curl -s ${EXAMPLE_HOST}/api/health`,
                 :key="type.family"
                 class="grid gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,11rem)_1fr]"
               >
-                <dt><code class="font-data text-[13px] text-paper">{{ type.family }}</code></dt>
-                <dd class="font-data text-sm text-paper-dim">{{ type.extensions }}</dd>
+                <dt><code class="font-data text-[13px] text-ink">{{ type.family }}</code></dt>
+                <dd class="font-data text-sm text-ink-muted">{{ type.extensions }}</dd>
               </div>
             </dl>
           </div>
@@ -373,10 +373,10 @@ curl -s ${EXAMPLE_HOST}/api/health`,
 
         <!-- ==================== Schema browsers ==================== -->
         <section class="panel p-5 sm:p-6">
-          <h2 class="font-display text-xl font-bold tracking-tight text-paper">
+          <h2 class="font-display text-xl font-bold tracking-tight text-ink">
             Prefer to poke at it live?
           </h2>
-          <p class="mt-2 max-w-2xl text-pretty leading-relaxed text-paper-dim">
+          <p class="mt-2 max-w-2xl text-pretty leading-relaxed text-ink-muted">
             The generated schema and an interactive console are both still served
             straight off the API.
           </p>

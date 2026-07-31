@@ -25,10 +25,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      // Dark-only by design, so the class is fixed here rather than toggled at
-      // runtime. Nuxt UI's `dark` variant resolves off `.dark` on an ancestor;
-      // without it every component would style itself for a light page.
-      htmlAttrs: { lang: 'en', class: 'dark' },
+      htmlAttrs: { lang: 'en' },
       title: 'PDFFlow — Fast, Private PDF Tools. No Signup Required.',
       meta: [
         { charset: 'utf-8' },
@@ -38,8 +35,19 @@ export default defineNuxtConfig({
           content:
             'Merge, split, compress and convert PDFs in your browser. No account, no tracking, files deleted automatically.',
         },
-        { name: 'theme-color', content: '#0a0b11' },
-        { name: 'color-scheme', content: 'dark' },
+        // One per scheme, so the browser chrome follows whichever the visitor
+        // is actually in.
+        {
+          name: 'theme-color',
+          content: '#ffffff',
+          media: '(prefers-color-scheme: light)',
+        },
+        {
+          name: 'theme-color',
+          content: '#1a1b1e',
+          media: '(prefers-color-scheme: dark)',
+        },
+        { name: 'color-scheme', content: 'light dark' },
       ],
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     },

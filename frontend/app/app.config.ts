@@ -8,10 +8,10 @@ export default defineAppConfig({
       neutral: 'slate',
     },
     button: {
-      // Every button here is either the safelight or invisible, and both should
-      // feel physical under the pointer.
+      // Buttons stay flat: a colour change on hover, no lift and no glow, which is
+      // what keeps the page reading as clean.
       slots: {
-        base: 'font-medium transition-all duration-200 active:scale-[0.97]',
+        base: 'font-medium transition-colors duration-200',
       },
     },
   },

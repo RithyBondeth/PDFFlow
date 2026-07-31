@@ -19,24 +19,24 @@ const tone = computed(() => {
       <UIcon
         v-if="tone === 'active'"
         name="i-lucide-loader-2"
-        class="size-5 animate-spin text-accent-300"
+        class="size-5 animate-spin text-accent-ink"
       />
-      <UIcon v-else-if="tone === 'success'" name="i-lucide-check" class="size-5 text-fixer" />
-      <UIcon v-else name="i-lucide-alert-triangle" class="size-5 text-alarm" />
+      <UIcon v-else-if="tone === 'success'" name="i-lucide-check" class="size-5 text-good" />
+      <UIcon v-else name="i-lucide-alert-triangle" class="size-5 text-bad" />
 
-      <p class="flex-1 text-sm font-medium text-paper">
+      <p class="flex-1 text-sm font-medium text-ink">
         {{ errorMessage || label }}
       </p>
-      <span class="font-data text-xs tabular-nums text-paper-dim">{{ progress }}%</span>
+      <span class="font-data text-xs tabular-nums text-ink-muted">{{ progress }}%</span>
     </div>
 
     <!-- Same rail as everywhere else, recoloured by outcome: the safelight
-         while it runs, fixer once it is a real result, alarm if it isn't. -->
+         while it runs, good once it is a real result, bad if it isn't. -->
     <div
       class="fuse"
       :class="{
-        'fuse-success': tone === 'success',
-        'fuse-error': tone === 'error',
+        'fuse-good': tone === 'success',
+        'fuse-bad': tone === 'error',
       }"
       :style="{ '--burn': `${Math.max(progress, 3)}%` }"
       role="progressbar"

@@ -27,17 +27,17 @@ const emit = defineEmits<{
     <div v-else class="panel px-5 py-8 sm:px-7 sm:py-6">
       <div class="flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
         <div
-          class="flex size-12 shrink-0 items-center justify-center rounded-full border border-accent-500/35 bg-accent-500/10 text-accent-300"
+          class="flex size-12 shrink-0 items-center justify-center rounded-full border border-accent-500/35 bg-accent-500/10 text-accent-ink"
         >
           <UIcon name="i-lucide-loader-2" class="size-5 animate-spin" />
         </div>
 
         <div class="w-full space-y-2.5 sm:flex-1">
           <div class="flex items-baseline justify-between gap-4">
-            <p class="font-display text-xl font-bold tracking-tight text-paper">
+            <p class="font-display text-xl font-bold tracking-tight text-ink">
               Sending your file
             </p>
-            <p class="font-data text-xs tabular-nums text-accent-300">{{ progress }}%</p>
+            <p class="font-data text-xs tabular-nums text-accent-ink">{{ progress }}%</p>
           </div>
           <div
             class="fuse"

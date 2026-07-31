@@ -33,7 +33,7 @@ onScopeDispose(() => clearTimeout(resetTimer))
 
 <template>
   <div class="trough overflow-hidden">
-    <div class="flex items-center gap-1 border-b border-line px-2 py-1.5">
+    <div class="flex items-center gap-1 border-b border-hairline px-2 py-1.5">
       <button
         v-for="(sample, index) in samples"
         :key="sample.label"
@@ -41,8 +41,8 @@ onScopeDispose(() => clearTimeout(resetTimer))
         class="font-data rounded px-2 py-1 text-[11px] uppercase tracking-[0.14em] transition-colors duration-150"
         :class="
           index === active
-            ? 'bg-accent-500/12 text-accent-300'
-            : 'text-paper-faint hover:text-paper-dim'
+            ? 'bg-accent-500/12 text-accent-ink'
+            : 'text-ink-faint hover:text-ink-muted'
         "
         :aria-pressed="index === active"
         @click="active = index"
@@ -53,7 +53,7 @@ onScopeDispose(() => clearTimeout(resetTimer))
       <button
         type="button"
         class="font-data ml-auto flex items-center gap-1.5 rounded px-2 py-1 text-[11px] uppercase tracking-[0.14em] transition-colors duration-150"
-        :class="copied ? 'text-fixer' : 'text-paper-faint hover:text-paper-dim'"
+        :class="copied ? 'text-good' : 'text-ink-faint hover:text-ink-muted'"
         @click="copy"
       >
         <UIcon :name="copied ? 'i-lucide-check' : 'i-lucide-copy'" class="size-3.5" />
@@ -70,30 +70,37 @@ onScopeDispose(() => clearTimeout(resetTimer))
 
 <style scoped>
 /* Scoped to the snippets so the token colours cannot leak into page text.
-   The safelight is reserved for strings — the part of a snippet a reader is
-   most likely to be substituting their own value into. */
+   The accent goes to strings — the part of a snippet a reader is most likely to
+   be substituting their own value into. Each token needs a light and a dark
+   shade: what reads well on #f7f8f9 is washed out on #151618. */
 :deep(.tok-string) {
-  color: var(--color-accent-200);
+  color: var(--color-accent-700);
 }
 
 :deep(.tok-key) {
-  color: var(--color-paper);
+  color: var(--color-ink);
 }
 
-:deep(.tok-keyword) {
-  color: var(--color-fixer);
-}
-
+:deep(.tok-keyword),
 :deep(.tok-number) {
-  color: var(--color-fixer);
+  color: oklch(0.45 0.13 300);
 }
 
 :deep(.tok-flag) {
-  color: var(--color-paper-dim);
+  color: var(--color-ink-muted);
 }
 
 :deep(.tok-comment) {
-  color: var(--color-paper-faint);
+  color: var(--color-ink-faint);
   font-style: italic;
+}
+
+:global(.dark) :deep(.tok-string) {
+  color: var(--color-accent-200);
+}
+
+:global(.dark) :deep(.tok-keyword),
+:global(.dark) :deep(.tok-number) {
+  color: oklch(0.82 0.11 300);
 }
 </style>

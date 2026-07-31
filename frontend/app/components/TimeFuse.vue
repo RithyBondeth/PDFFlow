@@ -24,10 +24,10 @@ const clamped = computed(() => Math.min(100, Math.max(0, props.burn)))
 <template>
   <div class="space-y-2">
     <div class="flex items-baseline justify-between gap-4">
-      <span class="font-data text-[11px] uppercase tracking-[0.18em] text-paper-faint">
+      <span class="font-data text-[11px] uppercase tracking-[0.18em] text-ink-faint">
         {{ label }}
       </span>
-      <span v-if="value" class="font-data text-xs tabular-nums text-accent-300">
+      <span v-if="value" class="font-data text-xs tabular-nums text-accent-ink">
         {{ value }}
       </span>
     </div>
