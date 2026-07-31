@@ -63,7 +63,7 @@ function onSelect(event: Event) {
     @drop.prevent="onDrop"
   >
     <div
-      class="flex size-14 items-center justify-center rounded-full bg-accent-500/10 text-accent-600 transition-transform"
+      class="flex size-14 items-center justify-center rounded-full bg-accent-500/10 text-accent-600 transition-transform duration-300 ease-out"
       :class="isOver && 'scale-110'"
     >
       <UIcon name="i-lucide-upload-cloud" class="size-7" />
@@ -82,6 +82,7 @@ function onSelect(event: Event) {
       color="primary"
       size="lg"
       icon="i-lucide-folder-open"
+      class="transition-transform duration-200 hover:scale-105 active:scale-95"
       @click="input?.click()"
     >
       Choose files

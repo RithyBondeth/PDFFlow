@@ -98,8 +98,71 @@ body {
   background: var(--color-accent-300);
 }
 
-/* Respect users who ask for less movement — the upload and progress
-   animations are decoration, not information. */
+/* ---------------------------------------------------------------------------
+   Motion.
+
+   All of it is CSS. An earlier attempt used motion-v, but its gesture props
+   (whileHover/whileInView) never fired under SSR here, and wrapping elements
+   in its <Motion> component stopped Tailwind's utilities from landing on the
+   headings. CSS keeps the markup plain and cannot break hydration.
+   --------------------------------------------------------------------------- */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes drift-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Above-the-fold entrance. `both` holds the opening frame during the delay so
+   nothing flashes in before its turn. Staggering is done by the caller with
+   --enter-delay rather than a class per position. */
+@media (prefers-reduced-motion: no-preference) {
+  .enter-rise,
+  .enter-drift {
+    animation: rise-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--enter-delay, 0s);
+  }
+  .enter-drift {
+    animation-name: drift-in;
+    animation-duration: 0.65s;
+  }
+}
+
+/* Below-the-fold reveals, driven by the scroll position itself — no observer
+   and no JS. `forwards` rather than `both` is deliberate: it is what keeps
+   content from being stranded invisible. An inactive timeline (unsupported
+   browser, a backgrounded tab whose compositor never advances it) applies no
+   effect at all, so the element falls back to its normal visible state, and
+   the not-yet-started phase only covers scroll positions where the element is
+   still below the fold anyway. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: rise-in linear forwards;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+
+/* Respect users who ask for less movement — these animations are decoration,
+   not information. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

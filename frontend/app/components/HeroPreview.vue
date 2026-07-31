@@ -19,7 +19,7 @@ const formats = ['PDF', 'DOCX', 'PNG', 'JPG', 'PPTX']
       <span class="flex size-5 items-center justify-center rounded-xs bg-accent-400 font-mono text-[10px] font-bold text-ink-950">P</span>
       <span class="font-mono text-xs text-ink-400">workspace.pdfflow</span>
       <span class="ml-auto inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-ink-400">
-        <span class="size-1.5 rounded-full bg-accent-400" aria-hidden="true" />
+        <span class="size-1.5 animate-pulse rounded-full bg-accent-400" aria-hidden="true" />
         Live preview
       </span>
     </div>
@@ -30,8 +30,9 @@ const formats = ['PDF', 'DOCX', 'PNG', 'JPG', 'PPTX']
         <div
           v-for="(tool, i) in tools"
           :key="tool.name"
-          class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
+          class="enter-rise flex items-center gap-2 rounded-md px-2 py-1.5 text-sm"
           :class="i === 1 ? 'bg-accent-500/10 text-accent-600' : 'text-ink-400'"
+          :style="{ '--enter-delay': `${0.55 + i * 0.07}s` }"
         >
           <span class="font-mono text-[10px] text-ink-700">{{ String(i + 1).padStart(2, '0') }}</span>
           <UIcon :name="tool.icon" class="size-4" />

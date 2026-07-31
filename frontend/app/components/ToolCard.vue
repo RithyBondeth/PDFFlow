@@ -28,12 +28,14 @@ const ICONS: Record<string, string> = {
 <template>
   <button
     type="button"
-    class="panel group flex w-full flex-col gap-2 p-4 text-left transition-all"
+    class="panel reveal group flex w-full flex-col gap-2 p-4 text-left transition duration-200"
     :class="[
       selected
         ? 'border-accent-500 ring-1 ring-accent-500/40'
-        : 'hover:-translate-y-0.5 hover:border-ink-700',
-      !operation.implemented && 'cursor-not-allowed opacity-45 hover:translate-y-0',
+        : 'hover:border-ink-700',
+      operation.implemented
+        ? 'hover:-translate-y-1 hover:shadow-lg hover:shadow-ink-950/5 active:translate-y-0'
+        : 'cursor-not-allowed opacity-45',
     ]"
     :disabled="!operation.implemented"
     :aria-pressed="selected"
@@ -43,7 +45,7 @@ const ICONS: Record<string, string> = {
       <span v-if="indexLabel" class="font-mono text-xs text-ink-700">{{ indexLabel }}</span>
       <UIcon
         :name="ICONS[operation.key] ?? 'i-lucide-wand-2'"
-        class="size-5 text-accent-600"
+        class="size-5 text-accent-600 transition-transform duration-200 group-hover:scale-110"
       />
       <span class="font-medium text-ink-200">{{ operation.name }}</span>
       <UBadge

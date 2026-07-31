@@ -65,21 +65,26 @@ const promises = [
       <div class="grid-fade pointer-events-none absolute inset-0" aria-hidden="true" />
       <div class="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
         <div>
-          <span class="inline-flex items-center gap-2 rounded-full border border-ink-800 px-3 py-1 font-mono text-xs uppercase tracking-widest text-ink-400">
+          <span
+            class="enter-rise inline-flex items-center gap-2 rounded-full border border-ink-800 px-3 py-1 font-mono text-xs uppercase tracking-widest text-ink-400"
+          >
             <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
             {{ operations.length }} tools · zero accounts
           </span>
 
-          <h1 class="mt-5 text-balance text-5xl font-black leading-[0.95] tracking-tight text-ink-950 sm:text-6xl">
+          <h1
+            class="enter-rise mt-5 text-balance text-5xl font-black leading-[0.95] tracking-tight text-ink-950 sm:text-6xl"
+            style="--enter-delay: 0.08s"
+          >
             Your PDFs,
             <span class="block"><span class="highlight-mark">handled.</span></span>
           </h1>
-          <p class="mt-5 max-w-xl text-pretty text-lg text-ink-400">
+          <p class="enter-rise mt-5 max-w-xl text-pretty text-lg text-ink-400" style="--enter-delay: 0.16s">
             Merge, split, compress and convert documents in seconds. Your files are
             processed and then deleted — nothing is kept, nothing is shared.
           </p>
 
-          <div class="mt-8">
+          <div class="enter-rise mt-8" style="--enter-delay: 0.24s">
             <UploadPanel
               :uploading="uploading"
               :progress="uploadProgress"
@@ -90,7 +95,10 @@ const promises = [
             />
           </div>
 
-          <ul class="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-400">
+          <ul
+            class="enter-rise mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-400"
+            style="--enter-delay: 0.32s"
+          >
             <li v-for="promise in promises" :key="promise.title" class="flex items-center gap-1.5">
               <UIcon :name="promise.icon" class="size-4 text-accent-600" />
               {{ promise.title }}
@@ -98,20 +106,22 @@ const promises = [
           </ul>
         </div>
 
-        <HeroPreview class="hidden lg:block" />
+        <HeroPreview class="enter-drift hidden lg:block" style="--enter-delay: 0.2s" />
       </div>
     </section>
 
     <!-- Tools -->
     <section id="tools" class="mx-auto max-w-6xl scroll-mt-20 px-6 py-16">
-      <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-ink-400">
-        <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
-        Works with your files
-      </span>
-      <h2 class="mt-3 text-2xl font-semibold text-ink-950">Every tool you need</h2>
-      <p class="mt-2 text-ink-400">
-        Pick a file first — PDFFlow only offers the tools that fit what you uploaded.
-      </p>
+      <div class="reveal">
+        <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-ink-400">
+          <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
+          Works with your files
+        </span>
+        <h2 class="mt-3 text-2xl font-semibold text-ink-950">Every tool you need</h2>
+        <p class="mt-2 text-ink-400">
+          Pick a file first — PDFFlow only offers the tools that fit what you uploaded.
+        </p>
+      </div>
 
       <div v-for="category in categories" :key="category.key" class="mt-10">
         <h3 class="mb-3 text-sm font-medium uppercase tracking-wider text-ink-400">
@@ -130,7 +140,7 @@ const promises = [
 
     <!-- Privacy -->
     <section id="privacy" class="mx-auto max-w-6xl scroll-mt-20 px-6 py-16">
-      <div class="panel p-8 sm:p-12">
+      <div class="panel reveal p-8 sm:p-12">
         <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-ink-400">
           <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
           Made to stay out of your way
@@ -142,12 +152,16 @@ const promises = [
         </p>
 
         <ol class="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <li v-for="(step, index) in [
-            { title: 'Upload', body: 'Your file is written to a temporary directory under a random UUID name. Its original name is never used on disk.' },
-            { title: 'Process', body: 'A background worker reads it, does the one operation you asked for, and writes the result.' },
-            { title: 'Download', body: 'You fetch the result over a link tied to your job id. No index, no listing, no sharing.' },
-            { title: 'Delete', body: 'Inputs are removed the moment the job ends; results within 30 minutes. A sweep runs every 5 minutes.' },
-          ]" :key="step.title" class="space-y-1.5 border-t border-ink-800 pt-4">
+          <li
+            v-for="(step, index) in [
+              { title: 'Upload', body: 'Your file is written to a temporary directory under a random UUID name. Its original name is never used on disk.' },
+              { title: 'Process', body: 'A background worker reads it, does the one operation you asked for, and writes the result.' },
+              { title: 'Download', body: 'You fetch the result over a link tied to your job id. No index, no listing, no sharing.' },
+              { title: 'Delete', body: 'Inputs are removed the moment the job ends; results within 30 minutes. A sweep runs every 5 minutes.' },
+            ]"
+            :key="step.title"
+            class="space-y-1.5 border-t border-ink-800 pt-4"
+          >
             <span class="block font-mono text-sm text-accent-600">{{ String(index + 1).padStart(2, '0') }}</span>
             <h3 class="font-medium text-ink-200">{{ step.title }}</h3>
             <p class="text-sm leading-relaxed text-ink-400">{{ step.body }}</p>

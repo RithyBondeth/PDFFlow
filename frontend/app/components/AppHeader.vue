@@ -36,7 +36,7 @@
         to="/#upload"
         color="primary"
         trailing-icon="i-lucide-arrow-right"
-        class="font-medium"
+        class="font-medium transition-transform hover:scale-105 active:scale-95"
       >
         Get started
       </UButton>
