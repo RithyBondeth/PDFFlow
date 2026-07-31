@@ -4,6 +4,7 @@
 
 # TLS material and ACME challenge scratch space never belong in the repo.
 infrastructure/certbot-webroot/
+infrastructure/letsencrypt/
 *.pem
 
 # --- user data ---------------------------------------------------------

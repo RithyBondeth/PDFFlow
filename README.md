@@ -276,8 +276,8 @@ reachable for certificate renewal, and adds HSTS.
 cp .env.production.example .env
 ```
 
-Edit it — at minimum `POSTGRES_PASSWORD`, `TLS_CERT_DIR` and `CORS_ORIGINS` —
-then:
+Edit it — at minimum `POSTGRES_PASSWORD`, `LETSENCRYPT_DIR` and
+`CORS_ORIGINS` — then:
 
 ```bash
 docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml up -d --build
@@ -289,6 +289,17 @@ docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastru
 > development default. `POSTGRES_PASSWORD` is one of them: omit the flag on a
 > fresh host and Postgres initialises with the default password while the
 > stack reports itself healthy.
+
+Issue the first certificate once DNS points at the host and the stack is up,
+so nginx can serve the challenge:
+
+```bash
+docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml run --rm certbot certonly --webroot -w /var/www/certbot -d pdfflow.bondeth.site --agree-tos --no-eff-email --email you@example.com
+```
+
+Rehearse with `--dry-run` first — Let's Encrypt rate-limits failed issuances.
+After that a `certbot` sidecar renews twice daily and nginx reloads every six
+hours to pick up the new file, so renewal needs no attention.
 
 Still yours to check:
 
