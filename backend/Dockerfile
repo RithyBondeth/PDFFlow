@@ -42,3 +42,13 @@ RUN useradd --create-home --uid 10001 pdfflow \
 USER pdfflow
 CMD ["celery", "-A", "app.worker.celery_app.celery_app", "worker", \
      "--loglevel=info", "--queues=pdf,maintenance", "--concurrency=2"]
+
+# Railway gives one persistent volume to one service. Keep the API, worker and
+# cleanup scheduler together so every process sees the same documents.
+FROM worker AS railway
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends supervisor \
+    && rm -rf /var/lib/apt/lists/* \
+    && chmod 0755 /app/deploy/railway-entrypoint.sh
+EXPOSE 8000
+CMD ["/app/deploy/railway-entrypoint.sh"]

@@ -267,6 +267,10 @@ components are left to `vue-tsc` and the production build. Restoring
 
 ## Deployment
 
+For Railway Hobby, follow the dedicated [Railway deployment guide](docs/railway.md).
+It uses Railway Postgres and Redis, a 5 GB volume for temporary documents, one
+combined backend service, and a separate public frontend.
+
 The base Compose file runs plain HTTP and is meant for local development.
 Production adds an overlay,
 [`infrastructure/docker-compose.prod.yml`](infrastructure/docker-compose.prod.yml),

@@ -20,7 +20,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production \
     NITRO_HOST=0.0.0.0 \
-    NITRO_PORT=3000
+    PORT=3000 \
+    NUXT_PUBLIC_API_BASE=/api
 
 COPY --from=build /app/.output ./.output
 

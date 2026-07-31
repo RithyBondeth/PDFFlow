@@ -70,3 +70,5 @@ jobs:
           -f infrastructure/docker-compose.prod.yml
           run --rm --no-deps worker
           python -m tests.container_office_smoke
+      - run: docker build --file backend/Dockerfile --target railway --tag pdfflow-railway .
+      - run: docker run --rm --entrypoint supervisord pdfflow-railway --version

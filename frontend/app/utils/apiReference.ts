@@ -9,7 +9,7 @@
  */
 
 /** Host used in the copyable examples. Swap for your own deployment. */
-export const EXAMPLE_HOST = 'http://localhost:8080'
+export const EXAMPLE_HOST = 'https://pdfflow.bondeth.site'
 
 export interface DocField {
   name: string

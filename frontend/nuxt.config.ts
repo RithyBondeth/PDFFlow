@@ -21,12 +21,14 @@ export default defineNuxtConfig({
     // Server-only. Relative URLs have no origin during SSR, so server-side
     // fetches must address the API container directly. Never exposed to the
     // browser, which reaches the same API through nginx on the public base.
-    apiInternal: process.env.NUXT_API_INTERNAL || 'http://api:8000/api',
+    apiInternal:
+      process.env.NUXT_API_INTERNAL ||
+      (process.env.NODE_ENV === 'production' ? 'http://api:8000/api' : `${devStackOrigin}/api`),
 
     public: {
-      // Behind nginx the API is same-origin, so a relative base is correct in
-      // production. `nuxt dev` overrides it via NUXT_PUBLIC_API_BASE.
-      apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',
+      // The browser always uses the same origin. Nitro forwards this path to
+      // FastAPI, whether the deployment is nginx or Railway's private network.
+      apiBase: process.env.NUXT_PUBLIC_API_BASE || '/api',
 
       // Canonical, Open Graph and sitemap URLs have to be absolute, and the
       // app cannot infer its own public origin from behind a proxy. Set
