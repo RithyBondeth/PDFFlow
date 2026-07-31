@@ -1,0 +1,494 @@
+@import 'tailwindcss';
+@import '@nuxt/ui';
+
+/* ===========================================================================
+   PDFFlow — clean, high-contrast, two modes.
+
+   Structure follows Reahu: one typeface doing everything, headlines set large
+   and tight, small radii, hairlines instead of shadows, and a single accent that
+   only ever marks the action. The accent here is a solid blue rather than
+   Reahu's lime, and the typeface is Ubuntu rather than Inter.
+
+   Every colour is declared twice: light values in @theme (which Tailwind emits
+   into :root, so they are also the defaults) and dark values in `.dark`, which
+   @nuxtjs/color-mode toggles on <html>. Components therefore never branch on
+   mode — `bg-surface` is correct in both.
+   =========================================================================== */
+
+@theme {
+  /* --- Surfaces, light mode -------------------------------------------- */
+  --color-canvas: #ffffff;
+  --color-sunken: #f7f8f9;
+  --color-surface: #ffffff;
+  --color-raised: #f4f5f7;
+  --color-hairline: #e6e8eb;
+  --color-hairline-strong: #d3d7dd;
+
+  /* --- Text, light mode ------------------------------------------------ */
+  --color-ink: #16181c;
+  --color-ink-muted: #565b64;
+  --color-ink-faint: #868d97;
+
+  /* --- Accent -----------------------------------------------------------
+     Identical in both modes, so a primary button looks the same either way.
+     `ink` is the shade that stays legible as text on the current canvas and is
+     the only member of the scale that changes between modes. */
+  --color-accent-50: oklch(0.97 0.015 260);
+  --color-accent-100: oklch(0.94 0.035 260);
+  --color-accent-200: oklch(0.885 0.07 260);
+  --color-accent-300: oklch(0.805 0.115 260);
+  --color-accent-400: oklch(0.7 0.16 261);
+  --color-accent-500: oklch(0.6 0.2 262);
+  --color-accent-600: oklch(0.525 0.21 263);
+  --color-accent-700: oklch(0.445 0.185 264);
+  --color-accent-800: oklch(0.365 0.145 265);
+  --color-accent-900: oklch(0.3 0.11 266);
+  --color-accent-950: oklch(0.215 0.07 267);
+  --color-accent-ink: oklch(0.525 0.21 263);
+
+  /* Outcomes. Blue is the action, so these two only ever report.
+     "Good" is a cyan rather than the usual green — green is Reahu's colour and
+     is deliberately absent here, and a cyan also sits in the same family as the
+     accent instead of fighting it. */
+  --color-good: oklch(0.56 0.115 205);
+  --color-good-soft: oklch(0.95 0.035 205);
+  --color-bad: oklch(0.55 0.2 25);
+  --color-bad-soft: oklch(0.955 0.03 25);
+
+  /* Ubuntu throughout, paired with its own monospace companion. The mono is not
+     decoration — it carries every timer, byte count and percentage in the app.
+     Ubuntu ships 300/400/500/700 and Ubuntu Mono 400/700, so nothing here asks
+     for a 600: the browser would synthesise it and the result looks smeared. */
+  --font-sans: 'Ubuntu', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Ubuntu', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-mono: 'Ubuntu Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Small radii read as precise. Reahu's buttons are 4px. */
+  --radius-panel: 8px;
+
+  /* Ruling for the grid backdrop, and the square it draws. */
+  --color-grid: oklch(0.2 0.01 265 / 0.055);
+  --grid-cell: 58px;
+}
+
+.dark {
+  --color-canvas: #1a1b1e;
+  --color-sunken: #151618;
+  --color-surface: #202227;
+  --color-raised: #282b31;
+  --color-hairline: #2e3137;
+  --color-hairline-strong: #3d4147;
+
+  --color-ink: #e9ebee;
+  --color-ink-muted: #a2a8b0;
+  --color-ink-faint: #71777f;
+
+  /* Lifted so it holds contrast against a dark canvas. */
+  --color-accent-ink: oklch(0.805 0.115 260);
+
+  --color-good: oklch(0.82 0.11 200);
+  --color-good-soft: oklch(0.3 0.055 200);
+  --color-bad: oklch(0.7 0.18 25);
+  --color-bad-soft: oklch(0.32 0.09 25);
+
+  /* Light rules on a dark canvas need more presence than dark rules on white. */
+  --color-grid: oklch(0.95 0.01 265 / 0.07);
+}
+
+/* ---------------------------------------------------------------------------
+   Nuxt UI tokens, mapped onto the above in both modes. Unlayered rules beat
+   the @layer base defaults Nuxt UI ships, so no !important is needed.
+   --------------------------------------------------------------------------- */
+:root,
+.light {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+:root,
+.light,
+.dark {
+  --ui-text-dimmed: var(--color-ink-faint);
+  --ui-text-muted: var(--color-ink-muted);
+  --ui-text-toned: var(--color-ink-muted);
+  --ui-text: var(--color-ink);
+  --ui-text-highlighted: var(--color-ink);
+  /* Solid accent buttons are blue in both modes, so their label is always
+     white — not a mode-dependent "inverted". */
+  --ui-text-inverted: #ffffff;
+
+  --ui-bg: var(--color-canvas);
+  --ui-bg-muted: var(--color-sunken);
+  --ui-bg-elevated: var(--color-raised);
+  --ui-bg-accented: var(--color-hairline);
+  --ui-bg-inverted: var(--color-ink);
+
+  --ui-border: var(--color-hairline);
+  --ui-border-muted: var(--color-hairline);
+  --ui-border-accented: var(--color-hairline-strong);
+  --ui-border-inverted: var(--color-ink);
+
+  --ui-radius: 0.25rem;
+}
+
+html {
+  background-color: var(--color-canvas);
+}
+
+body {
+  font-family: 'Ubuntu', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background-color: var(--color-canvas);
+  color: var(--color-ink-muted);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Switching modes should feel like a light being turned on, not a page reload.
+   Limited to the two properties that actually change so nothing else animates. */
+@media (prefers-reduced-motion: no-preference) {
+  html,
+  body {
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+}
+
+.font-display {
+  font-family: 'Ubuntu', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* Ubuntu is wider and rounder than a grotesque, so it needs far less negative
+     tracking than Inter did before the letters start colliding. */
+  letter-spacing: -0.02em;
+}
+
+.font-data {
+  font-family: 'Ubuntu Mono', ui-monospace, 'SFMono-Regular', monospace;
+  font-feature-settings: 'tnum' 1;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-500);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--color-accent-500) 22%, transparent);
+  color: var(--color-ink);
+}
+
+/* ---------------------------------------------------------------------------
+   Surfaces.
+
+   A panel is a hairline box. In light mode it gets one very soft shadow so it
+   lifts off the page; in dark mode a shadow would be invisible, so the border
+   does the work alone.
+   --------------------------------------------------------------------------- */
+.panel {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+}
+
+:root .panel,
+.light .panel {
+  box-shadow: 0 1px 2px oklch(0.2 0.01 265 / 0.04);
+}
+
+/* ---------------------------------------------------------------------------
+   Grid backdrop.
+
+   Fixed graph-paper ruling behind the whole app, faded out toward the bottom so
+   it frames the hero and then gets out of the way of long reading. Sits in a
+   positioned layer at z-index 0 with the content at z-index 10 — a negative
+   z-index would paint it behind the body's own background and vanish.
+   --------------------------------------------------------------------------- */
+.grid-rule {
+  background-image:
+    linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+  background-size: var(--grid-cell) var(--grid-cell);
+  /* Anchored so the ruling stays put while the page scrolls over it. */
+  background-position: center top;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 92%);
+  mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 92%);
+}
+
+/* A soft accent wash drifting over the ruling. This is the only ambient motion
+   in the app; everything else is triggered by load, scroll or the pointer. */
+.grid-beam {
+  background: radial-gradient(
+    38rem 26rem at 50% 50%,
+    color-mix(in oklch, var(--color-accent-500) 16%, transparent),
+    transparent 70%
+  );
+}
+
+.dark .grid-beam {
+  background: radial-gradient(
+    38rem 26rem at 50% 50%,
+    color-mix(in oklch, var(--color-accent-500) 22%, transparent),
+    transparent 70%
+  );
+}
+
+/* Holds content rather than being content: code, trays, readouts. */
+.trough {
+  background: var(--color-sunken);
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+}
+
+/* Reahu's signature, kept: a marker stroke through the bottom of the headline's
+   last words.
+
+   Painted as the span's own background rather than an absolutely-positioned
+   bar. Both the height and the offset are in em, so the stroke tracks the font
+   size instead of needing a value per breakpoint, and it overlaps the letters
+   the way a real highlighter would rather than sitting under them as an
+   underline. Apply it to text that occupies a single line — a background on an
+   inline box is only painted on its first line fragment. */
+.mark {
+  /* Two identical stops, i.e. a flat blue — not a gradient. It has to be an
+     image rather than a background-color because background-size only clips
+     images; a colour would flood the whole line box instead of the stroke. */
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklch, var(--color-accent-500) 26%, transparent),
+    color-mix(in oklch, var(--color-accent-500) 26%, transparent)
+  );
+  background-repeat: no-repeat;
+  background-size: 100% 0.26em;
+  background-position: 0 0.78em;
+  border-radius: 1px;
+  /* Keeps the stroke from being clipped at the ends of the phrase. */
+  padding-inline: 0.04em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.dark .mark {
+  background-image: linear-gradient(
+    to right,
+    color-mix(in oklch, var(--color-accent-500) 50%, transparent),
+    color-mix(in oklch, var(--color-accent-500) 50%, transparent)
+  );
+}
+
+/* ---------------------------------------------------------------------------
+   Eyebrow: mono, wide-tracked, opened by a small solid square in the accent.
+   --------------------------------------------------------------------------- */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: 'Ubuntu Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-ink-faint);
+}
+
+.eyebrow::before {
+  content: '';
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 1px;
+  background-color: var(--color-accent-500);
+}
+
+/* ---------------------------------------------------------------------------
+   The fuse.
+
+   Kept from the previous pass because it is doing real work — the deletion
+   countdown, upload progress and job progress are all the same rail — but
+   restyled flat: a hairline track, a gradient fill, no glow.
+   --------------------------------------------------------------------------- */
+.fuse {
+  --burn: 0%;
+  position: relative;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--color-hairline);
+  overflow: hidden;
+}
+
+.fuse::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--burn);
+  border-radius: 999px;
+  background-color: var(--color-accent-500);
+  transition: width 1s linear;
+}
+
+.fuse-good::before {
+  background-color: var(--color-good);
+}
+
+.fuse-bad::before {
+  background-color: var(--color-bad);
+}
+
+/* ---------------------------------------------------------------------------
+   Motion. Deliberately quieter than before: an entrance, a scroll reveal, and
+   nothing ambient.
+   --------------------------------------------------------------------------- */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.75rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes drift-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.25rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The highlighter drawing itself across the phrase, left to right. background-size
+   is animatable, so the stroke grows without the text reflowing. */
+@keyframes mark-draw {
+  from {
+    background-size: 0% 0.26em;
+  }
+  to {
+    background-size: 100% 0.26em;
+  }
+}
+
+/* The ambient wash, on a long slow circuit of the hero. */
+@keyframes beam-drift {
+  0% {
+    transform: translate3d(-18%, -12%, 0);
+  }
+  50% {
+    transform: translate3d(20%, 8%, 0);
+  }
+  100% {
+    transform: translate3d(-18%, -12%, 0);
+  }
+}
+
+/* A light passing along the band being rewritten, so the example panel reads as
+   mid-process rather than frozen. */
+@keyframes band-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+/* The active step in a sequence. A ring expanding outward, not the dot itself
+   scaling — scaling the dot makes the row of labels jitter. */
+@keyframes ping-ring {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+/* `both` holds the opening frame during the delay so nothing flashes in before
+   its turn. Staggering is the caller's job, via --enter-delay. */
+@media (prefers-reduced-motion: no-preference) {
+  .enter-rise,
+  .enter-drift {
+    animation: rise-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--enter-delay, 0s);
+  }
+
+  .enter-drift {
+    animation-name: drift-in;
+    animation-duration: 0.6s;
+  }
+
+  /* Opt-in, and only above the fold. A stroke that draws itself while offscreen
+     is a wasted gesture, and the footer's marker is better left static. */
+  .mark-draw {
+    animation: mark-draw 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--enter-delay, 0s);
+  }
+
+  .beam-drift {
+    animation: beam-drift 26s ease-in-out infinite;
+  }
+
+  .band-shimmer {
+    animation: band-shimmer 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .ping-ring {
+    animation: ping-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}
+
+/* Panels and cards rise slightly under the pointer. Transform and shadow only,
+   so nothing reflows and the hover cannot shift neighbouring cards. */
+.lift {
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.lift:hover {
+  transform: translateY(-2px);
+}
+
+:root .lift:hover,
+.light .lift:hover {
+  box-shadow: 0 6px 20px -10px oklch(0.2 0.01 265 / 0.16);
+}
+
+.dark .lift:hover {
+  box-shadow: 0 6px 20px -10px oklch(0 0 0 / 0.5);
+}
+
+/* Scroll-driven, so there is no observer and no JS. `forwards` rather than
+   `both` is what keeps content from being stranded invisible: an inactive
+   timeline (unsupported browser, a tab whose compositor never advances)
+   applies no effect at all and the element stays visible. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal {
+      animation: rise-in linear forwards;
+      animation-timeline: view();
+      /* Staggering a scroll-driven animation means shifting its *range*, not
+         adding a delay — a view() timeline is positional, so animation-delay
+         does nothing. Callers set --reveal-from per item to make a row of cards
+         arrive left to right. */
+      animation-range: entry var(--reveal-from, 0%) entry var(--reveal-to, 50%);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,38 @@
+# PDFFlow — production overlay. Layers TLS termination onto the base stack.
+#
+# Run from the repository root:
+#   docker compose --env-file .env \
+#                  -f infrastructure/docker-compose.yml \
+#                  -f infrastructure/docker-compose.prod.yml up -d --build
+#
+# `--env-file .env` is not optional. Passing two -f flags moves Compose's
+# project directory to infrastructure/, so it stops discovering the .env at
+# the repository root. Without the flag every ${VAR:-default} in the base file
+# silently falls back to its development default — including
+# POSTGRES_PASSWORD, which means a fresh volume initialises with the well
+# known default password and the stack comes up looking perfectly healthy.
+#
+# The base file is unchanged and still runs plain HTTP on ${HTTP_PORT} for
+# local development. This overlay swaps nginx onto the TLS config, publishes
+# 443, and mounts the certificate directory.
+#
+# Required in .env:
+#   TLS_CERT_DIR   host directory containing fullchain.pem and privkey.pem
+#   HTTP_PORT=80   so the redirect-to-HTTPS server is reachable on the default
+#                  port (the base file publishes ${HTTP_PORT}:80)
+
+name: pdfflow
+
+services:
+  nginx:
+    ports:
+      # Port 80 is already published by the base file via ${HTTP_PORT}.
+      - "${HTTPS_PORT:-443}:443"
+    volumes:
+      # Same target path as the base mount, so this replaces it rather than
+      # adding a second config directory.
+      - ./nginx/conf.d.tls:/etc/nginx/conf.d:ro
+      - ${TLS_CERT_DIR:?set TLS_CERT_DIR to the host directory holding fullchain.pem and privkey.pem}:/etc/nginx/certs:ro
+      # Webroot for ACME HTTP-01 challenges, so certbot can renew without
+      # taking the server down.
+      - ${ACME_WEBROOT:-./certbot-webroot}:/var/www/certbot
