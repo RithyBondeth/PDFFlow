@@ -60,9 +60,10 @@ Add the same GitHub repository again as a second service:
 - Root directory: `/frontend`
 - Railway config file: `/frontend/railway.toml`
 
-The Dockerfile path is repository-absolute (`/frontend/Dockerfile`) in the
-checked-in Railway configuration. Do not replace it with only `Dockerfile` in
-the dashboard.
+The Dockerfile path is repository-absolute (`/frontend/Dockerfile.railway`) in
+the checked-in Railway configuration. It intentionally uses repository-root
+copy paths because Railway keeps the monorepo root as its Docker build context.
+Do not replace it with only `Dockerfile` in the dashboard.
 
 Set these variables, using the exact name of your backend service:
 
