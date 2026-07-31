@@ -1,0 +1,26 @@
+FROM node:22-alpine AS build
+WORKDIR /app
+
+RUN npm install --global npm@11.9.0
+
+# Railway keeps the repository root as the Docker build context for this
+# monorepo, even though the service root is /frontend.
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+FROM node:22-alpine AS runtime
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    NITRO_HOST=0.0.0.0 \
+    PORT=3000 \
+    NUXT_PUBLIC_API_BASE=/api
+
+COPY --from=build /app/.output ./.output
+
+USER node
+EXPOSE 3000
+CMD ["node", ".output/server/index.mjs"]

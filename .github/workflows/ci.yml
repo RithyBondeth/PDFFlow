@@ -72,3 +72,7 @@ jobs:
           python -m tests.container_office_smoke
       - run: docker build --file backend/Dockerfile --target railway --tag pdfflow-railway .
       - run: docker run --rm --entrypoint supervisord pdfflow-railway --version
+      - run: >-
+          docker build
+          --file frontend/Dockerfile.railway
+          --tag pdfflow-frontend-railway .
