@@ -33,8 +33,8 @@ const COMPRESSION_LEVELS = [
 </script>
 
 <template>
-  <div class="panel space-y-5 p-6">
-    <h2 class="text-sm font-medium uppercase tracking-wider text-ink-400">
+  <div class="panel space-y-5 p-5 sm:p-6">
+    <h2 class="font-data text-xs uppercase tracking-[0.2em] text-paper-faint">
       Options
     </h2>
 
@@ -44,14 +44,14 @@ const COMPRESSION_LEVELS = [
         v-for="level in COMPRESSION_LEVELS"
         :key="level.value"
         type="button"
-        class="rounded-xl border p-3 text-left transition-colors"
+        class="rounded-[10px] border p-3 text-left transition-colors duration-200"
         :class="options.level === level.value
-          ? 'border-accent-500 bg-accent-500/10'
-          : 'border-ink-800 hover:border-ink-700'"
+          ? 'border-accent-400/60 bg-accent-500/10'
+          : 'border-line hover:border-line-lit'"
         @click="set('level', level.value)"
       >
-        <span class="block font-medium text-ink-200">{{ level.label }}</span>
-        <span class="block text-xs text-ink-400">{{ level.hint }}</span>
+        <span class="block font-medium text-paper">{{ level.label }}</span>
+        <span class="mt-0.5 block text-xs leading-snug text-paper-dim">{{ level.hint }}</span>
       </button>
     </div>
 
@@ -83,7 +83,7 @@ const COMPRESSION_LEVELS = [
     <template v-else-if="operation.key === 'split'">
       <UFormField label="How to split">
         <URadioGroup
-          :model-value="options.mode"
+          :model-value="options.mode as string"
           :items="[
             { value: 'every_page', label: 'One PDF per page' },
             { value: 'ranges', label: 'By page range' },
@@ -117,7 +117,7 @@ const COMPRESSION_LEVELS = [
       />
     </UFormField>
 
-    <p v-else class="text-sm text-ink-400">
+    <p v-else class="text-sm text-paper-dim">
       This tool has no options — just run it.
     </p>
   </div>

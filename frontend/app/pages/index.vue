@@ -15,12 +15,18 @@ const { data: operations } = await useAsyncData<Operation[]>(
 )
 
 const categories = [
-  { key: 'organize', label: 'Organise' },
-  { key: 'optimize', label: 'Optimise' },
-  { key: 'convert', label: 'Convert' },
-  { key: 'security', label: 'Security' },
-  { key: 'edit', label: 'Edit' },
+  { key: 'organize', label: 'Organise', blurb: 'Change what the document contains' },
+  { key: 'optimize', label: 'Optimise', blurb: 'Make it smaller without wrecking it' },
+  { key: 'convert', label: 'Convert', blurb: 'Move between PDF and other formats' },
+  { key: 'security', label: 'Security', blurb: 'Add or remove a password' },
+  { key: 'edit', label: 'Edit', blurb: 'Mark up the pages themselves' },
 ] as const
+
+const readyCount = computed(() => operations.value.filter((op) => op.implemented).length)
+
+function toolsIn(key: string) {
+  return operations.value.filter((op) => op.category === key)
+}
 
 async function handleFiles(files: File[]) {
   error.value = null
@@ -40,131 +46,175 @@ async function handleFiles(files: File[]) {
 }
 
 const promises = [
+  { icon: 'i-lucide-user-x', label: 'No account' },
+  { icon: 'i-lucide-eye-off', label: 'No tracking' },
+  { icon: 'i-lucide-timer', label: 'Gone in 30 min' },
+]
+
+/**
+ * The lifecycle of one file, keyed by when each thing happens. The times are
+ * the organising information here — far more use to someone deciding whether
+ * to trust the page than a decorative 01/02/03 would be.
+ */
+const lifecycle = [
   {
-    icon: 'i-lucide-user-x',
-    title: 'No signup, ever',
-    body: 'No email, no password, no cookie banner. Open the page and start working.',
+    at: 't + 0s',
+    title: 'Arrives',
+    body: 'Written to a temporary directory under a random UUID. The name you gave it is never used on disk.',
   },
   {
-    icon: 'i-lucide-shield-check',
-    title: 'Private by design',
-    body: 'Files are stored under a random name that only your browser session knows.',
+    at: 't + ~2s',
+    title: 'Processed',
+    body: 'A background worker reads it, does the one operation you asked for, and writes the result.',
   },
   {
-    icon: 'i-lucide-timer',
-    title: 'Deleted automatically',
-    body: 'Everything you upload is erased within 30 minutes — usually much sooner.',
+    at: 'on request',
+    title: 'Downloaded',
+    body: 'Fetched over a link tied to your job id. There is no index, no listing and no sharing.',
+  },
+  {
+    at: 't + 30 min',
+    title: 'Gone',
+    body: 'Inputs are removed the moment the job ends, results within 30 minutes. A sweep runs every 5 minutes.',
   },
 ]
 </script>
 
 <template>
   <div>
-    <!-- Hero -->
-    <section id="upload" class="relative scroll-mt-20 overflow-hidden px-6 pb-16 pt-20">
-      <div class="grid-fade pointer-events-none absolute inset-0" aria-hidden="true" />
-      <div class="relative mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.1fr_1fr]">
-        <div>
-          <span
-            class="enter-rise inline-flex items-center gap-2 rounded-full border border-ink-800 px-3 py-1 font-mono text-xs uppercase tracking-widest text-ink-400"
-          >
-            <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
-            {{ operations.length }} tools · zero accounts
-          </span>
+    <!-- ==================== Hero ==================== -->
+    <section id="upload" class="relative scroll-mt-16 px-5 pb-14 pt-12 sm:px-6 sm:pt-16">
+      <div class="mx-auto max-w-6xl">
+        <!-- Claim beside evidence: the headline makes the promise, the panel
+             shows it happening. They are near enough in height to sit as a pair
+             without either column trailing off into empty space. -->
+        <div class="grid items-center gap-10 lg:grid-cols-[1.05fr_1fr] lg:gap-14">
+          <div>
+            <p class="enter-rise eyebrow">{{ readyCount }} tools ready · no signup</p>
 
-          <h1
-            class="enter-rise mt-5 text-balance text-5xl font-black leading-[0.95] tracking-tight text-ink-950 sm:text-6xl"
-            style="--enter-delay: 0.08s"
-          >
-            Your PDFs,
-            <span class="block"><span class="highlight-mark">handled.</span></span>
-          </h1>
-          <p class="enter-rise mt-5 max-w-xl text-pretty text-lg text-ink-400" style="--enter-delay: 0.16s">
-            Merge, split, compress and convert documents in seconds. Your files are
-            processed and then deleted — nothing is kept, nothing is shared.
-          </p>
+            <h1
+              class="enter-rise font-display mt-5 text-balance text-[2.75rem] font-extrabold leading-[0.95] tracking-[-0.02em] text-paper sm:text-6xl"
+              style="--enter-delay: 0.08s"
+            >
+              PDF tools that
+              <span class="lit">forget</span>
+              you were here.
+            </h1>
 
-          <div class="enter-rise mt-8" style="--enter-delay: 0.24s">
-            <UploadPanel
-              :uploading="uploading"
-              :progress="uploadProgress"
-              :error="error"
-              @files="handleFiles"
-              @error="error = $event"
-              @dismiss="error = null"
-            />
+            <p
+              class="enter-rise mt-6 max-w-lg text-pretty text-lg leading-relaxed text-paper-dim"
+              style="--enter-delay: 0.16s"
+            >
+              Merge, split, compress and convert documents in seconds. No email, no
+              password, no cookie banner — and every file you send is deleted
+              within half an hour of arriving.
+            </p>
           </div>
 
-          <ul
-            class="enter-rise mt-6 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-400"
-            style="--enter-delay: 0.32s"
-          >
-            <li v-for="promise in promises" :key="promise.title" class="flex items-center gap-1.5">
-              <UIcon :name="promise.icon" class="size-4 text-accent-600" />
-              {{ promise.title }}
-            </li>
-          </ul>
+          <DevelopingPanel class="enter-drift" style="--enter-delay: 0.2s" />
         </div>
 
-        <HeroPreview class="enter-drift hidden lg:block" style="--enter-delay: 0.2s" />
+        <!-- Full width, because the drop target should be the largest thing on
+             the page once you have read the headline. -->
+        <div class="enter-rise mt-10" style="--enter-delay: 0.26s">
+          <UploadPanel
+            :uploading="uploading"
+            :progress="uploadProgress"
+            :error="error"
+            @files="handleFiles"
+            @error="error = $event"
+            @dismiss="error = null"
+          />
+        </div>
+
+        <ul
+          class="enter-rise mt-6 flex flex-wrap items-center justify-center gap-x-7 gap-y-2.5"
+          style="--enter-delay: 0.34s"
+        >
+          <li
+            v-for="promise in promises"
+            :key="promise.label"
+            class="font-data flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-paper-faint"
+          >
+            <UIcon :name="promise.icon" class="size-3.5 text-accent-500" />
+            {{ promise.label }}
+          </li>
+        </ul>
       </div>
     </section>
 
-    <!-- Tools -->
-    <section id="tools" class="mx-auto max-w-6xl scroll-mt-20 px-6 py-16">
-      <div class="reveal">
-        <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-ink-400">
-          <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
-          Works with your files
-        </span>
-        <h2 class="mt-3 text-2xl font-semibold text-ink-950">Every tool you need</h2>
-        <p class="mt-2 text-ink-400">
-          Pick a file first — PDFFlow only offers the tools that fit what you uploaded.
+    <!-- ==================== Tools ==================== -->
+    <section id="tools" class="mx-auto max-w-6xl scroll-mt-16 px-5 py-16 sm:px-6">
+      <div class="reveal max-w-2xl">
+        <p class="eyebrow">The toolbox</p>
+        <h2
+          class="font-display mt-4 text-balance text-3xl font-extrabold tracking-[-0.02em] text-paper sm:text-4xl"
+        >
+          Everything you'd otherwise install software for
+        </h2>
+        <p class="mt-3 text-pretty text-paper-dim">
+          Add your file first and PDFFlow shows only the tools that fit it — a
+          password can't be stripped off a JPEG, so it won't offer to.
         </p>
       </div>
 
-      <div v-for="category in categories" :key="category.key" class="mt-10">
-        <h3 class="mb-3 text-sm font-medium uppercase tracking-wider text-ink-400">
-          {{ category.label }}
-        </h3>
+      <div v-for="category in categories" :key="category.key" class="mt-12">
+        <div class="reveal mb-4 flex items-baseline gap-4">
+          <h3 class="font-data text-xs uppercase tracking-[0.2em] text-paper">
+            {{ category.label }}
+          </h3>
+          <span class="hidden text-sm text-paper-faint sm:inline">{{ category.blurb }}</span>
+          <span class="h-px flex-1 bg-line" aria-hidden="true" />
+          <span class="font-data text-xs tabular-nums text-paper-faint">
+            {{ toolsIn(category.key).length }}
+          </span>
+        </div>
+
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ToolCard
-            v-for="(operation, i) in operations.filter((op) => op.category === category.key)"
+            v-for="operation in toolsIn(category.key)"
             :key="operation.key"
             :operation="operation"
-            :index="i + 1"
           />
         </div>
       </div>
     </section>
 
-    <!-- Privacy -->
-    <section id="privacy" class="mx-auto max-w-6xl scroll-mt-20 px-6 py-16">
-      <div class="panel reveal p-8 sm:p-12">
-        <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-ink-400">
-          <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
-          Made to stay out of your way
-        </span>
-        <h2 class="mt-3 text-2xl font-semibold text-ink-950">What happens to your files</h2>
-        <p class="mt-2 max-w-2xl text-ink-400">
-          Most PDF sites ask you to trust a privacy policy. Here is the actual
-          lifecycle instead.
-        </p>
-
-        <ol class="mt-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <li
-            v-for="(step, index) in [
-              { title: 'Upload', body: 'Your file is written to a temporary directory under a random UUID name. Its original name is never used on disk.' },
-              { title: 'Process', body: 'A background worker reads it, does the one operation you asked for, and writes the result.' },
-              { title: 'Download', body: 'You fetch the result over a link tied to your job id. No index, no listing, no sharing.' },
-              { title: 'Delete', body: 'Inputs are removed the moment the job ends; results within 30 minutes. A sweep runs every 5 minutes.' },
-            ]"
-            :key="step.title"
-            class="space-y-1.5 border-t border-ink-800 pt-4"
+    <!-- ==================== Lifecycle ==================== -->
+    <section id="lifecycle" class="mx-auto max-w-6xl scroll-mt-16 px-5 py-20 sm:px-6">
+      <div class="panel reveal overflow-hidden p-6 sm:p-10">
+        <div class="max-w-2xl">
+          <p class="eyebrow">What happens to your file</p>
+          <h2
+            class="font-display mt-4 text-balance text-3xl font-extrabold tracking-[-0.02em] text-paper sm:text-4xl"
           >
-            <span class="block font-mono text-sm text-accent-600">{{ String(index + 1).padStart(2, '0') }}</span>
-            <h3 class="font-medium text-ink-200">{{ step.title }}</h3>
-            <p class="text-sm leading-relaxed text-ink-400">{{ step.body }}</p>
+            The whole life of an upload
+          </h2>
+          <p class="mt-3 text-pretty text-paper-dim">
+            Most PDF sites ask you to trust a privacy policy. Here is the actual
+            sequence instead, with the times it happens at.
+          </p>
+        </div>
+
+        <!-- The rail runs the width of the section and each step hangs off it on
+             its own tick, so the same fuse that measures a real job in the
+             workspace is what this sequence is pinned to. Below sm the rail is
+             dropped and each step keeps a plain left rule instead. -->
+        <div class="fuse mt-10 hidden sm:block" style="--burn: 100%" aria-hidden="true" />
+
+        <ol class="mt-6 grid gap-8 sm:mt-0 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4">
+          <li
+            v-for="step in lifecycle"
+            :key="step.title"
+            class="relative border-l border-line pl-4 sm:border-l-0 sm:pl-0 sm:pt-7"
+          >
+            <span
+              class="absolute left-0 top-0 hidden h-4 w-px bg-line-lit sm:block"
+              aria-hidden="true"
+            />
+            <p class="font-data text-xs tabular-nums text-accent-300">{{ step.at }}</p>
+            <h3 class="mt-2 font-medium text-paper">{{ step.title }}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-paper-dim">{{ step.body }}</p>
           </li>
         </ol>
       </div>

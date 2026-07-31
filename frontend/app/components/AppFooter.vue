@@ -1,33 +1,44 @@
 <template>
-  <footer class="border-t border-ink-800/60">
-    <div class="reveal mx-auto max-w-6xl px-6 py-16 text-center">
-      <span class="inline-flex items-center gap-1.5 rounded-full border border-ink-800 px-2.5 py-1 font-mono text-xs uppercase tracking-widest text-ink-400">
-        <span class="size-1.5 rounded-xs bg-accent-400" aria-hidden="true" />
-        No accounts. No catch.
-      </span>
-      <h2 class="mx-auto mt-5 max-w-lg text-balance text-3xl font-bold tracking-tight text-ink-950 sm:text-4xl">
-        Your files, never stored.
+  <footer class="mt-8 border-t border-line/80">
+    <div class="reveal mx-auto max-w-6xl px-5 py-20 text-center sm:px-6">
+      <p class="eyebrow">Nothing to sign up for</p>
+      <h2
+        class="font-display mx-auto mt-5 max-w-xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight text-paper sm:text-5xl"
+      >
+        Bring a file. Leave with a file.
       </h2>
-      <div class="mt-7">
+      <p class="mx-auto mt-4 max-w-md text-pretty text-paper-dim">
+        Everything in between happens on our server and then stops existing.
+      </p>
+      <div class="mt-8">
         <UButton
           to="/#upload"
           color="primary"
           size="lg"
           trailing-icon="i-lucide-arrow-right"
-          class="font-medium transition-transform duration-200 hover:scale-105 active:scale-95"
+          class="shadow-[0_0_36px_-8px_oklch(0.772_0.155_76/0.6)] hover:-translate-y-0.5 hover:shadow-[0_0_44px_-6px_oklch(0.772_0.155_76/0.75)]"
         >
-          Start with a file
+          Add a file
         </UButton>
       </div>
     </div>
 
-    <div class="border-t border-ink-800/60 py-8">
-      <div class="mx-auto flex max-w-6xl flex-col items-center gap-2 px-6 text-center text-sm text-ink-400">
-        <p>
-          PDFFlow processes your files on the server and deletes them
-          automatically. No accounts, no tracking, no permanent storage.
+    <div class="border-t border-line/60 py-8">
+      <div
+        class="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 text-center sm:flex-row sm:justify-between sm:px-6 sm:text-left"
+      >
+        <p class="font-data text-xs text-paper-faint">
+          © {{ new Date().getFullYear() }} PDFFlow — no accounts, no tracking, no
+          permanent storage.
         </p>
-        <p class="text-xs">© {{ new Date().getFullYear() }} PDFFlow</p>
+        <NuxtLink
+          to="/docs"
+          external
+          target="_blank"
+          class="font-data text-xs text-paper-faint underline decoration-line-lit underline-offset-4 transition-colors hover:text-accent-300"
+        >
+          API reference
+        </NuxtLink>
       </div>
     </div>
   </footer>

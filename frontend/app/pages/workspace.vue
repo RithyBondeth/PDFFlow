@@ -10,9 +10,17 @@ onMounted(() => {
 
 const submitting = ref(false)
 const now = useTimestamp({ interval: 1000 })
+
 const timeLeft = computed(() => {
   void now.value // re-evaluate every tick
   return formatCountdown(workspace.expiresAt)
+})
+
+// The same rail the landing page uses to state the 30-minute promise, here
+// wired to the actual expiry. This is the one that is literally true.
+const burn = computed(() => {
+  void now.value
+  return burnPercent(workspace.expiresAt)
 })
 
 const canSubmit = computed(
@@ -51,6 +59,15 @@ function startOver() {
   navigateTo('/')
 }
 
+// The heading is a signpost, so it says where you actually are rather than
+// telling someone to pick a tool while their finished file sits below it.
+const heading = computed(() => {
+  if (!workspace.jobId) return 'Pick what to do'
+  if (job.state.status === 'completed') return 'Your file is ready'
+  if (job.isTerminal.value) return 'That did not work'
+  return 'Working on it'
+})
+
 const savings = computed(() => {
   const result = job.state.result as Record<string, number | boolean>
   return typeof result.percentSaved === 'number'
@@ -60,22 +77,32 @@ const savings = computed(() => {
 </script>
 
 <template>
-  <div class="mx-auto max-w-6xl px-6 py-12">
-    <div class="mb-8 flex flex-wrap items-center gap-3">
-      <h1 class="text-2xl font-semibold text-ink-950">Your workspace</h1>
-      <UBadge v-if="timeLeft" color="neutral" variant="subtle">
-        <UIcon name="i-lucide-timer" class="mr-1 size-3.5" />
-        Files deleted in {{ timeLeft }}
-      </UBadge>
+  <div class="mx-auto max-w-6xl px-5 py-10 sm:px-6 sm:py-12">
+    <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="eyebrow">Your session</p>
+        <h1
+          class="font-display mt-3 text-3xl font-extrabold tracking-[-0.02em] text-paper sm:text-4xl"
+        >
+          {{ heading }}
+        </h1>
+      </div>
       <UButton
-        class="ml-auto"
         variant="ghost"
         color="neutral"
         icon="i-lucide-rotate-ccw"
+        class="text-paper-dim hover:text-paper"
         @click="startOver"
       >
         Start over
       </UButton>
+    </div>
+
+    <!-- The countdown gets its own full-width rail at the top of the page: it
+         applies to everything below it, and it is the one number a visitor was
+         promised on the way in. -->
+    <div v-if="timeLeft" class="panel mb-6 px-5 py-4">
+      <TimeFuse :burn="burn" label="Everything here is deleted in" :value="timeLeft" />
     </div>
 
     <ErrorMessage
@@ -85,14 +112,17 @@ const savings = computed(() => {
       @dismiss="workspace.error = null"
     />
 
-    <div class="grid gap-6 lg:grid-cols-[320px_1fr]">
+    <div class="grid gap-6 lg:grid-cols-[300px_1fr]">
       <!-- Files -->
       <aside class="space-y-3">
-        <div class="flex items-baseline justify-between">
-          <h2 class="text-sm font-medium uppercase tracking-wider text-ink-400">
-            Files ({{ workspace.files.length }})
+        <div class="flex items-baseline gap-3">
+          <h2 class="font-data text-xs uppercase tracking-[0.2em] text-paper">
+            Files
           </h2>
-          <span class="text-xs text-ink-400">{{ formatBytes(workspace.totalSize) }}</span>
+          <span class="h-px flex-1 bg-line" aria-hidden="true" />
+          <span class="font-data text-xs tabular-nums text-paper-faint">
+            {{ formatBytes(workspace.totalSize) }}
+          </span>
         </div>
 
         <FileList
@@ -102,11 +132,8 @@ const savings = computed(() => {
           @reorder="workspace.reorder"
         />
 
-        <p
-          v-if="workspace.selectedOperation?.multiFile"
-          class="text-xs text-ink-400"
-        >
-          Drag to set the order files are combined in.
+        <p v-if="workspace.selectedOperation?.multiFile" class="text-xs text-paper-faint">
+          Drag to set the order the files are combined in.
         </p>
       </aside>
 
@@ -114,9 +141,12 @@ const savings = computed(() => {
       <section class="space-y-6">
         <template v-if="!workspace.jobId">
           <div>
-            <h2 class="mb-3 text-sm font-medium uppercase tracking-wider text-ink-400">
-              Choose a tool
-            </h2>
+            <div class="mb-4 flex items-baseline gap-3">
+              <h2 class="font-data text-xs uppercase tracking-[0.2em] text-paper">
+                Tools that fit these files
+              </h2>
+              <span class="h-px flex-1 bg-line" aria-hidden="true" />
+            </div>
             <div class="grid gap-3 sm:grid-cols-2">
               <ToolCard
                 v-for="operation in workspace.operations"
@@ -134,16 +164,25 @@ const savings = computed(() => {
             :operation="workspace.selectedOperation"
           />
 
+          <!-- Only a runnable action wears the safelight. Until a tool is
+               picked this is an outline, so nothing on the page looks pressable
+               that isn't. -->
           <UButton
             size="xl"
-            color="primary"
+            :color="canSubmit ? 'primary' : 'neutral'"
+            :variant="canSubmit ? 'solid' : 'outline'"
             block
             :loading="submitting"
             :disabled="!canSubmit"
             icon="i-lucide-play"
+            :class="
+              canSubmit
+                ? 'shadow-[0_0_32px_-12px_oklch(0.772_0.155_76/0.55)] hover:shadow-[0_0_40px_-10px_oklch(0.772_0.155_76/0.7)]'
+                : ''
+            "
             @click="run"
           >
-            {{ workspace.selectedOperation ? `Run ${workspace.selectedOperation.name}` : 'Select a tool to continue' }}
+            {{ workspace.selectedOperation ? `Run ${workspace.selectedOperation.name}` : 'Pick a tool to continue' }}
           </UButton>
         </template>
 
@@ -156,17 +195,26 @@ const savings = computed(() => {
             :error-message="job.state.errorMessage"
           />
 
-          <div v-if="job.state.status === 'completed'" class="panel space-y-4 p-6">
+          <!-- A finished result is the one thing on this page that is allowed to
+               look permanent, so it gets the fixer edge. -->
+          <div
+            v-if="job.state.status === 'completed'"
+            class="panel space-y-5 border-fixer/30 p-5 sm:p-6"
+          >
             <div class="flex items-center gap-3">
-              <UIcon name="i-lucide-file-check-2" class="size-8 text-green-600" />
+              <span
+                class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-fixer/35 bg-fixer/10 text-fixer"
+              >
+                <UIcon name="i-lucide-file-check-2" class="size-5" />
+              </span>
               <div class="min-w-0">
-                <p class="truncate font-medium text-ink-200">
+                <p class="truncate font-medium text-paper">
                   {{ job.state.outputFilename }}
                 </p>
-                <p class="text-sm text-ink-400">
+                <p class="font-data text-xs tabular-nums text-paper-dim">
                   {{ formatBytes(job.state.outputSize ?? 0) }}
                   <template v-if="savings?.alreadyOptimized">
-                    · already optimised — no reduction possible
+                    · already optimised, no reduction possible
                   </template>
                   <template v-else-if="savings">
                     · {{ savings.percentSaved }}% smaller than
@@ -184,11 +232,12 @@ const savings = computed(() => {
               color="primary"
               block
               icon="i-lucide-download"
+              class="shadow-[0_0_32px_-12px_oklch(0.772_0.155_76/0.55)] hover:shadow-[0_0_40px_-10px_oklch(0.772_0.155_76/0.7)]"
             >
               Download result
             </UButton>
 
-            <p class="text-center text-xs text-ink-400">
+            <p class="text-center text-xs text-paper-faint">
               This link stops working in {{ timeLeft }}, when the file is deleted.
             </p>
           </div>
@@ -199,9 +248,10 @@ const savings = computed(() => {
             color="neutral"
             block
             icon="i-lucide-plus"
+            class="text-paper-dim hover:text-paper"
             @click="startOver"
           >
-            Process another file
+            Work on another file
           </UButton>
         </template>
       </section>

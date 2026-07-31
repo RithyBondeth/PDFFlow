@@ -6,10 +6,10 @@ defineEmits<{ dismiss: [] }>()
 <template>
   <div
     role="alert"
-    class="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-left"
+    class="flex items-start gap-3 rounded-[10px] border border-alarm/35 bg-alarm-deep/25 px-4 py-3 text-left"
   >
-    <UIcon name="i-lucide-alert-circle" class="mt-0.5 size-5 shrink-0 text-red-600" />
-    <p class="flex-1 text-sm text-red-700">{{ message }}</p>
+    <UIcon name="i-lucide-alert-triangle" class="mt-0.5 size-5 shrink-0 text-alarm" />
+    <p class="flex-1 text-sm text-paper">{{ message }}</p>
     <UButton
       color="neutral"
       variant="ghost"

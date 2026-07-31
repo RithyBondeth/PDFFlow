@@ -21,6 +21,20 @@ export function formatCountdown(target: Date | null): string {
     : `${seconds} s`
 }
 
+/**
+ * How much of a file's life is already spent, 0–100, for the fuse rail.
+ *
+ * The API only sends the expiry, so the start is inferred from the server's
+ * retention window (FILE_TTL_MINUTES, 30 by default). That makes the rail
+ * exact for a fresh upload and never wrong by more than the request latency.
+ */
+export function burnPercent(target: Date | null, windowMinutes = 30): number {
+  if (!target || windowMinutes <= 0) return 0
+  const remaining = (target.getTime() - Date.now()) / 1000
+  const total = windowMinutes * 60
+  return Math.min(100, Math.max(0, ((total - remaining) / total) * 100))
+}
+
 export const FAMILY_ICONS: Record<string, string> = {
   pdf: 'i-lucide-file-text',
   image: 'i-lucide-image',
