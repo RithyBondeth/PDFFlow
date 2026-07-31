@@ -1,352 +1,317 @@
-# PDFFlow
+<p align="center">
+  <img src="frontend/public/favicon.svg" width="72" height="72" alt="PDFFlow logo">
+</p>
 
-**Fast, Private PDF Tools. No Signup Required.**
+<h1 align="center">PDFFlow</h1>
 
-PDFFlow is a privacy-first PDF processing platform. You upload a document, pick
-a tool, download the result, and leave. There is no account, no session cookie,
-no analytics, and no permanent storage — uploaded files live in a temporary
-directory under a generated name and are deleted automatically.
+<p align="center">
+  <strong>Fast, private PDF tools that forget you were here.</strong><br>
+  Merge, split, compress, organise and convert documents—without an account,
+  tracking, or permanent storage.
+</p>
 
----
+<p align="center">
+  <a href="https://github.com/RithyBondeth/PDFFlow/actions/workflows/ci.yml"><img src="https://github.com/RithyBondeth/PDFFlow/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+  <a href="https://github.com/RithyBondeth/PDFFlow/stargazers"><img src="https://img.shields.io/github/stars/RithyBondeth/PDFFlow?style=flat&logo=github&label=Stars" alt="GitHub stars"></a>
+  <a href="https://github.com/RithyBondeth/PDFFlow/issues"><img src="https://img.shields.io/github/issues/RithyBondeth/PDFFlow" alt="Open issues"></a>
+  <img src="https://img.shields.io/badge/privacy-no%20tracking-2563eb" alt="No tracking">
+  <img src="https://img.shields.io/badge/files-auto--deleted-0891b2" alt="Files auto-deleted">
+</p>
 
-## Contents
+<p align="center">
+  <a href="#quick-start"><strong>Run it locally</strong></a>
+  ·
+  <a href="#features"><strong>Explore the tools</strong></a>
+  ·
+  <a href="#api"><strong>Use the API</strong></a>
+  ·
+  <a href="https://github.com/RithyBondeth/PDFFlow"><strong>Star on GitHub ⭐</strong></a>
+</p>
 
-- [Why it is built this way](#why-it-is-built-this-way)
-- [Architecture](#architecture)
-- [File lifecycle](#file-lifecycle)
-- [Features](#features)
-- [Technology stack](#technology-stack)
-- [Getting started](#getting-started)
-- [Environment variables](#environment-variables)
-- [API](#api)
-- [Project structure](#project-structure)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Roadmap](#roadmap)
+![PDFFlow landing page](docs/images/pdfflow-landing.png)
 
----
+## Why PDFFlow?
 
-## Why it is built this way
+Most online document tools ask for an account, track how you use them, or leave
+you wondering where your files went. PDFFlow is built around a simpler promise:
+**upload a document, do the job, download the result, and leave no footprint.**
 
-Three product constraints drove nearly every technical decision:
-
-**No accounts.** There is no user table, no auth middleware and no session. The
-only identifier in the system is a job UUID that the browser holds in memory.
-This removes an entire class of security surface — but it also means rate
-limiting has to key on IP, and a page reload genuinely loses your work, because
-there is nowhere to restore it from.
-
-**No permanent storage.** Files are written to a `tmpfs` volume, so in the
-default Docker setup user documents never touch durable disk at all. The
-database stores *metadata about* files — never their contents.
-
-**Deletion is enforced, not promised.** Inputs are removed the moment a job
-reaches a terminal state. A Celery beat sweep runs every five minutes and
-deletes anything past its TTL, plus any orphaned file on disk with no database
-row at all.
-
-## Architecture
-
-```
-                        ┌──────────────┐
-                        │ User Browser │
-                        └──────┬───────┘
-                               │ HTTPS
-                        ┌──────▼───────┐
-                        │    Nginx     │  rate limits, SSE pass-through
-                        └──┬────────┬──┘
-                  static   │        │  /api
-                  ┌────────▼──┐  ┌──▼────────┐
-                  │  Nuxt 4   │  │  FastAPI  │
-                  └───────────┘  └──┬─────┬──┘
-                                    │     │
-                        ┌───────────▼─┐ ┌─▼──────────┐
-                        │ PostgreSQL  │ │   Redis    │
-                        │ job metadata│ │ queue+pubsub│
-                        └─────────────┘ └─┬──────────┘
-                                          │
-                                   ┌──────▼───────┐
-                                   │Celery Worker │
-                                   └──────┬───────┘
-                                          │
-                                ┌─────────▼──────────┐
-                                │ Temporary storage  │
-                                │  (tmpfs volume)    │
-                                └────────────────────┘
-```
-
-Redis does double duty: it is the Celery broker *and* the pub/sub bus that
-carries progress events from the worker back to whichever API process is
-holding the browser's SSE connection. That indirection is what lets the API
-scale horizontally without a client losing its progress stream.
-
-## File lifecycle
-
-| Step | What happens | Where |
+| Private by default | Useful right away | Honest about your data |
 | --- | --- | --- |
-| 1. Upload | Content sniffed, size-capped, written as `<uuid>.<ext>` | `storage/uploads/` |
-| 2. Job created | Row in `jobs`, task pushed to Redis | PostgreSQL + Redis |
-| 3. Processing | Worker emits `job_progress` at 10/30/70/100 | Celery |
-| 4. Result | Written as a new UUID under `processed/` | `storage/processed/` |
-| 5. Inputs purged | Deleted immediately when the job ends | worker `finally:` block |
-| 6. Expiry | Result deleted, job marked `expired` | beat sweep, every 5 min |
+| No accounts, session cookies, analytics, or advertising trackers. | Seven working tools cover common PDF and Office workflows. | Inputs are removed after processing; results expire within 30 minutes. |
 
-Default TTL is **30 minutes** (`FILE_TTL_MINUTES`).
+The interface is responsive, supports light and dark themes, and shows file
+requirements and output formats before you upload anything.
 
 ## Features
 
-Working end to end today:
+### Ready today
 
-- **Merge PDF** — combine several documents, order set by drag and drop
-- **Split PDF** — one PDF per page, or by explicit page ranges → ZIP
-- **Extract Pages** — build a new document from a page selection
-- **Rotate PDF** — 90/180/270°, whole document or selected pages
-- **Compress PDF** — low/medium/high, reports original vs. compressed size
-- **Organize Pages** — reorder, rotate, duplicate and remove pages visually
-- **Office to PDF** — convert DOCX, XLSX or PPTX in an isolated LibreOffice worker
+| Tool | What it does | Output |
+| --- | --- | --- |
+| **Merge PDF** | Combine multiple PDFs in drag-and-drop order | PDF |
+| **Split PDF** | Split every page or use explicit page ranges | ZIP |
+| **Extract Pages** | Build a new document from selected pages | PDF |
+| **Rotate PDF** | Rotate the whole document or selected pages | PDF |
+| **Organise Pages** | Reorder, rotate, duplicate and remove pages visually | PDF |
+| **Compress PDF** | Choose a compression level and compare file sizes | PDF |
+| **Office to PDF** | Convert DOCX, XLSX and PPTX with LibreOffice | PDF |
 
-Catalogued and surfaced in the UI as *Soon*, with handlers still to be written
-(see [Roadmap](#roadmap)): Watermark, Protect, Unlock, Extract Images,
-Images→PDF and PDF→Images.
+### On the roadmap
 
-The tool catalog lives in one place ([`backend/app/services/operations.py`](backend/app/services/operations.py))
-and is served to the frontend over `/api/operations`, so the picker can never
-advertise a tool the worker cannot run.
+- Watermark and protect PDFs
+- Unlock password-protected PDFs with the correct password
+- Extract embedded images
+- Convert images to PDF
+- Render PDF pages as images
 
-## Technology stack
+The backend serves the operation catalog to the frontend, so the UI never
+advertises a tool that the worker cannot run.
 
-| Layer | Choice |
+## Privacy by design
+
+```text
+Upload                  Process                  Download                Delete
+  │                        │                         │                      │
+  ├─ validate content ────►├─ isolated worker ─────►├─ private job URL ───►│
+  └─ random disk name      └─ progress over SSE     └─ no-store response   └─ ≤ 30 min
+```
+
+- **No identity to collect.** The browser keeps only a random job UUID in
+  memory. A page reload genuinely starts over.
+- **No original filename on disk.** Files are stored under generated UUIDs;
+  the user-provided name is display-only.
+- **No permanent document storage.** The default Docker setup uses a `tmpfs`
+  volume. PostgreSQL contains metadata, never document contents.
+- **Deletion has a safety net.** Inputs are purged as soon as processing ends.
+  A scheduled sweep removes expired results and orphaned files every five
+  minutes.
+- **Uploads are treated as hostile.** Content signatures, extensions and size
+  limits are checked while the file streams in.
+
+Read the full [security model](docs/security.md) for controls, trade-offs and
+the deliberate limitations of an anonymous service.
+
+## Architecture
+
+```text
+┌──────────────┐       ┌──────────────┐       ┌──────────────┐
+│ User browser │──────►│    Nginx     │──────►│    Nuxt 4    │
+└──────────────┘ HTTPS │ rate limiting│       │   frontend   │
+                       └──────┬───────┘       └──────────────┘
+                              │ /api
+                       ┌──────▼───────┐
+                       │   FastAPI    │
+                       └───┬──────┬───┘
+                           │      │
+                  ┌────────▼─┐  ┌─▼──────────┐
+                  │PostgreSQL│  │   Redis    │
+                  │ metadata │  │queue+pubsub│
+                  └──────────┘  └─────┬──────┘
+                                      │
+                                ┌─────▼──────┐
+                                │   Celery   │
+                                │   worker   │
+                                └─────┬──────┘
+                                      │
+                                ┌─────▼──────┐
+                                │ temporary │
+                                │  storage  │
+                                └────────────┘
+```
+
+Redis is both the Celery broker and the pub/sub channel for live progress.
+That allows API replicas to scale horizontally without breaking the browser's
+server-sent event stream. See [architecture.md](docs/architecture.md) for the
+decisions behind each component.
+
+### Technology
+
+| Layer | Built with |
 | --- | --- |
-| Frontend | Nuxt 4, Vue 3 (Composition API), TypeScript, Tailwind CSS v4, Nuxt UI, Pinia, VueUse |
-| API | FastAPI, Pydantic v2, SQLAlchemy 2.0, Alembic |
-| Worker | Celery 5, PyMuPDF, pypdf, Pillow, LibreOffice (headless) |
-| Data | PostgreSQL 16, Redis 7 |
-| Infra | Docker Compose, Nginx |
+| Frontend | Nuxt 4, Vue 3, TypeScript, Tailwind CSS v4, Nuxt UI, Pinia |
+| API | FastAPI, Pydantic v2, SQLAlchemy 2, Alembic |
+| Processing | Celery 5, PyMuPDF, pypdf, Pillow, LibreOffice |
+| Data and events | PostgreSQL 16, Redis 7 |
+| Infrastructure | Docker Compose, Nginx, Railway-ready services |
 
-## Getting started
+## Quick start
 
-### With Docker (recommended)
+### Docker Compose (recommended)
+
+You need [Docker](https://docs.docker.com/get-docker/) with Compose enabled.
 
 ```bash
+git clone https://github.com/RithyBondeth/PDFFlow.git
+cd PDFFlow
 cp .env.example .env
 docker compose up --build
 ```
 
-Then open <http://localhost:8080>. API docs are at
-<http://localhost:8080/docs>.
+Open **http://localhost:8080**. Interactive API documentation is available at
+**http://localhost:8080/docs**.
 
-Migrations run automatically: the `migrate` service applies `alembic upgrade
-head` before the API and worker are allowed to start.
+The migration service applies the database schema before the API and workers
+start. Stop the stack with `docker compose down`.
 
-### Local development
+<details>
+<summary><strong>Run the services separately for development</strong></summary>
 
-Backend:
-
-```bash
-cd backend && python -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-```
+### Backend
 
 ```bash
-cd backend && .venv/bin/uvicorn app.main:app --reload
+cd backend
+python -m venv .venv
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/uvicorn app.main:app --reload
 ```
 
-Worker (needs Redis and Postgres running):
+### Worker and cleanup scheduler
+
+Redis and PostgreSQL must already be running.
 
 ```bash
-cd backend && .venv/bin/celery -A app.worker.celery_app.celery_app worker --loglevel=info
+cd backend
+.venv/bin/celery -A app.worker.celery_app.celery_app worker --loglevel=info
 ```
 
-Beat scheduler, for the cleanup sweep:
+In another terminal:
 
 ```bash
-cd backend && .venv/bin/celery -A app.worker.celery_app.celery_app beat --loglevel=info
+cd backend
+.venv/bin/celery -A app.worker.celery_app.celery_app beat --loglevel=info
 ```
 
-Frontend:
+### Frontend
 
 ```bash
-cd frontend && npm install && npm run dev
+cd frontend
+npm install
+npm run dev
 ```
 
-## Environment variables
-
-Every value has a working default; see [`.env.example`](.env.example).
-
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `HTTP_PORT` | `8080` | Host port Nginx binds to |
-| `DATABASE_URL` | local Postgres | SQLAlchemy URL (psycopg 3) |
-| `REDIS_URL` | `redis://redis:6379/0` | Broker, result backend and event bus |
-| `STORAGE_ROOT` | `/data/storage` | Parent of `uploads/` and `processed/` |
-| `MAX_UPLOAD_BYTES` | `104857600` | Per-file ceiling, enforced while streaming |
-| `MAX_FILES_PER_JOB` | `25` | Upper bound on a single job |
-| `FILE_TTL_MINUTES` | `30` | How long anything survives |
-| `CLEANUP_INTERVAL_SECONDS` | `300` | Beat sweep cadence |
-| `CORS_ORIGINS` | localhost | Comma-separated allow-list |
-| `RATE_LIMIT_UPLOADS` | `30/minute` | Per-IP upload budget |
-| `RATE_LIMIT_JOBS` | `60/minute` | Per-IP job-creation budget |
-| `TRUSTED_PROXIES` | loopback + private ranges | Networks whose `X-Forwarded-For` is believed |
+</details>
 
 ## API
 
-Interactive Swagger UI at `/docs`, ReDoc at `/redoc`, schema at
-`/openapi.json`.
+PDFFlow's web interface is a client of the same REST API available to your own
+scripts and applications. There are no keys or accounts.
 
-| Method | Path | Purpose |
+| Method | Endpoint | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/health` | Liveness plus Postgres and Redis reachability |
-| `GET` | `/api/config` | Client-visible limits |
-| `GET` | `/api/operations` | The tool catalog |
-| `POST` | `/api/upload` | Multipart upload → file ids + applicable tools |
-| `POST` | `/api/jobs/create` | Queue an operation over uploaded file ids |
-| `GET` | `/api/jobs/{id}` | Full job record |
-| `GET` | `/api/jobs/{id}/status` | Lightweight status, for polling |
-| `GET` | `/api/jobs/{id}/events` | SSE stream: `job_created`, `job_progress`, `job_completed`, `job_failed` |
-| `GET` | `/api/download/{id}` | Result download |
+| `GET` | `/api/operations` | Discover available tools and file requirements |
+| `POST` | `/api/upload` | Upload one or more validated files |
+| `POST` | `/api/jobs/create` | Queue an operation |
+| `GET` | `/api/jobs/{id}/events` | Follow progress over server-sent events |
+| `GET` | `/api/jobs/{id}/status` | Poll lightweight job status |
+| `GET` | `/api/download/{id}` | Download the completed result |
+| `GET` | `/api/health` | Check API, PostgreSQL and Redis health |
 
-Errors are uniform and deliberately sparse — no paths, no stack traces, no
-stored filenames:
+Errors use a stable envelope and include a request ID without exposing paths,
+stack traces or stored filenames:
 
 ```json
-{ "error": { "code": "file_too_large", "message": "File exceeds the 100 MB limit.", "requestId": "a1b2c3d4e5f6" } }
+{
+  "error": {
+    "code": "file_too_large",
+    "message": "File exceeds the 100 MB limit.",
+    "requestId": "a1b2c3d4e5f6"
+  }
+}
 ```
 
-The `requestId` also comes back as an `X-Request-Id` header and is what appears
-in the server logs, so a user report can be traced without exposing internals.
+Swagger UI is served at `/docs`, ReDoc at `/redoc`, and the OpenAPI schema at
+`/openapi.json`.
 
-## Project structure
+## Configuration
 
-```
-pdfflow/
-├── frontend/                 Nuxt 4 application
-│   └── app/
-│       ├── components/       DropZone, FileList, ToolCard, JobStatus, …
-│       ├── composables/      useApi, useJobStream
-│       ├── pages/            index (landing), workspace
-│       └── stores/           workspace (Pinia)
-├── backend/
-│   ├── app/
-│   │   ├── api/routes/       health, upload, jobs, download
-│   │   ├── core/             config, errors, logging
-│   │   ├── db/               engine, session, declarative base
-│   │   ├── models/           Job, FileRecord
-│   │   ├── schemas/          Pydantic request/response models
-│   │   ├── services/         storage, validation, jobs, events, rate limiting
-│   │   └── worker/           Celery app, tasks, operations/
-│   └── tests/
-├── database/migrations/      Alembic
-├── infrastructure/           docker-compose.yml, nginx/
-└── docs/                     architecture, security
-```
+Every setting has a development default. Copy [`.env.example`](.env.example)
+to `.env` and adjust what your environment needs.
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `HTTP_PORT` | `8080` | Public Nginx port |
+| `DATABASE_URL` | Local PostgreSQL | SQLAlchemy connection URL |
+| `REDIS_URL` | `redis://redis:6379/0` | Queue, results and progress events |
+| `STORAGE_ROOT` | `/data/storage` | Temporary upload/result root |
+| `MAX_UPLOAD_BYTES` | `104857600` | Per-file streaming limit |
+| `MAX_FILES_PER_JOB` | `25` | Files accepted by one job |
+| `FILE_TTL_MINUTES` | `30` | Maximum result lifetime |
+| `CLEANUP_INTERVAL_SECONDS` | `300` | Expired-file sweep interval |
+| `CORS_ORIGINS` | Localhost | Allowed browser origins |
+| `TRUSTED_PROXIES` | Private networks | Proxies allowed to set forwarding headers |
 
 ## Testing
 
 ```bash
+# Backend
 cd backend && .venv/bin/pytest
-```
 
-The automated suite needs no external services — the API tests run against SQLite with
-Celery dispatch called inline, so it exercises the real upload → job → download
-path. Coverage focuses on the things that would hurt: path-traversal defences,
-the streaming size ceiling, MIME/extension mismatch detection, page-range
-parsing, OOXML package validation, every implemented PDF operation, isolated
-LibreOffice invocation, error messages that must not leak internals, and the
-cleanup sweep.
-
-Frontend tests run with Vitest:
-
-```bash
+# Frontend
 cd frontend && npm test
+
+# Frontend type checking and production build
+cd frontend && npm run typecheck && npm run build
 ```
 
-These cover the formatting utilities and the workspace store. Component
-rendering is *not* under test: `@nuxt/test-utils`' Nuxt environment does not
-currently boot under Vitest 3, and rather than pin an older toolchain the
-components are left to `vue-tsc` and the production build. Restoring
-`mountSuspended` coverage is worth doing once that combination works.
+The backend suite covers the complete upload → job → download path, storage
+escape attempts, streaming limits, MIME mismatches, page ranges, OOXML package
+validation, document operations, safe errors, rate limiting and cleanup. The
+frontend suite covers the workspace state, API reference, page organiser and
+formatting utilities. CI also builds the production containers.
+
+## Project structure
+
+```text
+PDFFlow/
+├── frontend/                  Nuxt application and server proxy
+│   ├── app/components/        Upload, tools, jobs and page organiser UI
+│   ├── app/pages/             Landing page, workspace and API reference
+│   └── tests/                 Vitest suite
+├── backend/
+│   ├── app/api/routes/        Health, uploads, jobs and downloads
+│   ├── app/services/          Validation, storage, events and rate limiting
+│   ├── app/worker/            Celery dispatcher and document operations
+│   └── tests/                 Pytest suite
+├── database/migrations/       Alembic migrations
+├── infrastructure/            Compose and Nginx production configuration
+├── docs/                      Architecture, security and deployment guides
+└── compose.yaml               Local full-stack entry point
+```
 
 ## Deployment
 
-For Railway Hobby, follow the dedicated [Railway deployment guide](docs/railway.md).
-It uses Railway Postgres and Redis, a 5 GB volume for temporary documents, one
-combined backend service, and a separate public frontend.
+- **Railway Hobby:** follow the step-by-step [Railway deployment guide](docs/railway.md).
+- **Docker host:** combine the development and production Compose files as
+  described in [`infrastructure/docker-compose.prod.yml`](infrastructure/docker-compose.prod.yml).
+- **TLS:** the production Nginx configuration supports Let's Encrypt bootstrap
+  and renewal through the included Certbot services.
 
-The base Compose file runs plain HTTP and is meant for local development.
-Production adds an overlay,
-[`infrastructure/docker-compose.prod.yml`](infrastructure/docker-compose.prod.yml),
-which terminates TLS in Nginx, publishes 443, and swaps in
-[`nginx/conf.d.tls/`](infrastructure/nginx/conf.d.tls/pdfflow.conf) — a config
-that redirects port 80 to HTTPS, keeps `/.well-known/acme-challenge/`
-reachable for certificate renewal, and adds HSTS.
+Production deployments should set a strong PostgreSQL password, use the exact
+public origin for CORS, narrow trusted proxy ranges, provide persistent
+temporary capacity, and run **exactly one** Celery beat replica.
 
-```bash
-cp .env.production.example .env
-```
+## Contributing
 
-Edit it — at minimum `POSTGRES_PASSWORD`, `LETSENCRYPT_DIR` and
-`CORS_ORIGINS`. Once DNS points at the host, issue the first certificate
-before starting Nginx:
+Contributions, bug reports and thoughtful feature ideas are welcome.
 
-```bash
-docker compose --env-file .env \
-  -f infrastructure/docker-compose.yml \
-  -f infrastructure/docker-compose.prod.yml \
-  run --rm --service-ports certbot-bootstrap certonly --standalone \
-  -d pdfflow.bondeth.site --agree-tos --no-eff-email --email you@example.com
-```
+1. Fork the repository and create a focused feature branch.
+2. Add or update tests with your change.
+3. Run the relevant test and build commands above.
+4. Open a pull request explaining the user-facing result.
 
-Port 80 must be reachable and unused during this one-time command. The
-`certbot-bootstrap` service is profile-gated, so it does not join the normal
-stack. With the certificate in place, start the application:
+For larger changes, [open an issue](https://github.com/RithyBondeth/PDFFlow/issues/new)
+first so the approach can be discussed before implementation.
 
-```bash
-docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml up -d --build
-```
+## Help PDFFlow grow
 
-> **`--env-file .env` is required.** Two `-f` flags move Compose's project
-> directory to `infrastructure/`, so it no longer finds the `.env` at the
-> repository root and every `${VAR:-default}` quietly reverts to its
-> development default. `POSTGRES_PASSWORD` is one of them: omit the flag on a
-> fresh host and Postgres initialises with the default password while the
-> stack reports itself healthy.
+If PDFFlow is useful to you, the easiest way to support it is to
+[**star the repository**](https://github.com/RithyBondeth/PDFFlow) and share it
+with someone who works with documents. A star helps other people discover the
+project—and gives me a strong signal to keep building the next tool. ⭐
 
-After that a `certbot` sidecar renews through Nginx's webroot twice daily and
-Nginx reloads every six hours to pick up the new file, so renewal needs no
-attention.
-
-Still yours to check:
-
-1. **Change `POSTGRES_PASSWORD`** and confirm `ENVIRONMENT=production`,
-   `DEBUG=false`.
-2. **Set `CORS_ORIGINS`** to your real origin only, and **`TRUSTED_PROXIES`**
-   to the network Nginx actually sits in. Leaving it wider than necessary
-   means anything inside that range can forge a client IP and slip the rate
-   limits.
-3. **Point DNS at the host** before requesting a certificate — the HTTP-01
-   challenge resolves the name it is issuing for.
-4. **Keep exactly one `beat` replica.** Scale `worker` and `api` freely; a
-   second beat would double every cleanup sweep.
-5. **Size the tmpfs volume** for your traffic — it is RAM. The default 2 GB
-   holds roughly 20 concurrent maximum-size jobs.
-6. **Watch `/api/health`**, which reports Postgres and Redis separately and
-   returns 503 when either is down.
-
-Every knob in `.env.example` must also appear in the `x-backend-env` block of
-the base Compose file. A variable missing there is not inherited from `.env` —
-the container never receives it and the code default wins silently.
-
-## Roadmap
-
-The architecture leaves room for the obvious next steps without a rewrite:
-
-- **Remaining tools.** Each is one function registered with `@register(key)` in
-  `app/worker/operations/` — the dispatcher, progress reporting and cleanup are
-  already generic.
-- **User accounts.** `Job` and `FileRecord` would take a nullable `owner_id`;
-  anonymous jobs keep working exactly as they do now.
-- **Premium plans.** Limits already flow from settings, so they can become
-  per-request values rather than globals.
-- **Durable storage.** `services/storage.py` is the only module that touches the
-  filesystem, and it is written against a small bucket API.
-- **API access / extension / desktop app.** The REST surface is already the
-  whole product; the frontend is just its first client.
+<p align="center">
+  <a href="https://github.com/RithyBondeth/PDFFlow"><strong>⭐ Star PDFFlow</strong></a>
+  ·
+  <a href="https://github.com/RithyBondeth"><strong>Follow @RithyBondeth</strong></a>
+</p>
