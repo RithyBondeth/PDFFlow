@@ -93,16 +93,15 @@ const lifecycle = [
             <p class="enter-rise eyebrow">{{ readyCount }} tools ready · no signup</p>
 
             <h1
-              class="enter-rise font-display mt-5 text-balance text-[2.75rem] font-extrabold leading-[0.95] tracking-[-0.02em] text-paper sm:text-6xl"
+              class="enter-rise font-display mt-5 text-[2.5rem] font-bold leading-[1] tracking-[-0.025em] text-ink sm:text-[3.25rem] lg:text-[3.4rem]"
               style="--enter-delay: 0.08s"
             >
-              PDF tools that
-              <span class="lit">forget</span>
-              you were here.
+              PDF tools that<br>
+              <span class="mark">forget you were here.</span>
             </h1>
 
             <p
-              class="enter-rise mt-6 max-w-lg text-pretty text-lg leading-relaxed text-paper-dim"
+              class="enter-rise mt-6 max-w-lg text-pretty text-lg leading-relaxed text-ink-muted"
               style="--enter-delay: 0.16s"
             >
               Merge, split, compress and convert documents in seconds. No email, no
@@ -134,7 +133,7 @@ const lifecycle = [
           <li
             v-for="promise in promises"
             :key="promise.label"
-            class="font-data flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-paper-faint"
+            class="font-data flex items-center gap-2 text-[11px] uppercase tracking-[0.14em] text-ink-faint"
           >
             <UIcon :name="promise.icon" class="size-3.5 text-accent-500" />
             {{ promise.label }}
@@ -148,11 +147,11 @@ const lifecycle = [
       <div class="reveal max-w-2xl">
         <p class="eyebrow">The toolbox</p>
         <h2
-          class="font-display mt-4 text-balance text-3xl font-extrabold tracking-[-0.02em] text-paper sm:text-4xl"
+          class="font-display mt-4 text-balance text-3xl font-bold tracking-[-0.02em] text-ink sm:text-[2.5rem]"
         >
           Everything you'd otherwise install software for
         </h2>
-        <p class="mt-3 text-pretty text-paper-dim">
+        <p class="mt-3 text-pretty text-ink-muted">
           Add your file first and PDFFlow shows only the tools that fit it — a
           password can't be stripped off a JPEG, so it won't offer to.
         </p>
@@ -160,12 +159,12 @@ const lifecycle = [
 
       <div v-for="category in categories" :key="category.key" class="mt-12">
         <div class="reveal mb-4 flex items-baseline gap-4">
-          <h3 class="font-data text-xs uppercase tracking-[0.2em] text-paper">
+          <h3 class="font-data text-xs uppercase tracking-[0.2em] text-ink">
             {{ category.label }}
           </h3>
-          <span class="hidden text-sm text-paper-faint sm:inline">{{ category.blurb }}</span>
-          <span class="h-px flex-1 bg-line" aria-hidden="true" />
-          <span class="font-data text-xs tabular-nums text-paper-faint">
+          <span class="hidden text-sm text-ink-faint sm:inline">{{ category.blurb }}</span>
+          <span class="h-px flex-1 bg-hairline" aria-hidden="true" />
+          <span class="font-data text-xs tabular-nums text-ink-faint">
             {{ toolsIn(category.key).length }}
           </span>
         </div>
@@ -186,11 +185,11 @@ const lifecycle = [
         <div class="max-w-2xl">
           <p class="eyebrow">What happens to your file</p>
           <h2
-            class="font-display mt-4 text-balance text-3xl font-extrabold tracking-[-0.02em] text-paper sm:text-4xl"
+            class="font-display mt-4 text-balance text-3xl font-bold tracking-[-0.02em] text-ink sm:text-[2.5rem]"
           >
             The whole life of an upload
           </h2>
-          <p class="mt-3 text-pretty text-paper-dim">
+          <p class="mt-3 text-pretty text-ink-muted">
             Most PDF sites ask you to trust a privacy policy. Here is the actual
             sequence instead, with the times it happens at.
           </p>
@@ -206,15 +205,15 @@ const lifecycle = [
           <li
             v-for="step in lifecycle"
             :key="step.title"
-            class="relative border-l border-line pl-4 sm:border-l-0 sm:pl-0 sm:pt-7"
+            class="relative border-l border-hairline pl-4 sm:border-l-0 sm:pl-0 sm:pt-7"
           >
             <span
-              class="absolute left-0 top-0 hidden h-4 w-px bg-line-lit sm:block"
+              class="absolute left-0 top-0 hidden h-4 w-px bg-hairline-strong sm:block"
               aria-hidden="true"
             />
-            <p class="font-data text-xs tabular-nums text-accent-300">{{ step.at }}</p>
-            <h3 class="mt-2 font-medium text-paper">{{ step.title }}</h3>
-            <p class="mt-1.5 text-sm leading-relaxed text-paper-dim">{{ step.body }}</p>
+            <p class="font-data text-xs tabular-nums text-accent-ink">{{ step.at }}</p>
+            <h3 class="mt-2 font-medium text-ink">{{ step.title }}</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-ink-muted">{{ step.body }}</p>
           </li>
         </ol>
       </div>

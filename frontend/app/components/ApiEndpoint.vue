@@ -23,33 +23,33 @@ const segments = computed(() =>
         class="font-data rounded px-2 py-1 text-[11px] font-medium uppercase tracking-[0.14em]"
         :class="
           isWrite
-            ? 'border border-accent-500/40 bg-accent-500/12 text-accent-300'
-            : 'border border-line bg-canvas/60 text-paper-dim'
+            ? 'border border-accent-500/40 bg-accent-500/12 text-accent-ink'
+            : 'border border-hairline bg-canvas/60 text-ink-muted'
         "
       >
         {{ endpoint.method }}
       </span>
 
-      <code class="font-data text-sm text-paper">
+      <code class="font-data text-sm text-ink">
         <span
           v-for="(segment, index) in segments"
           :key="index"
-          :class="segment.param ? 'text-accent-300' : ''"
+          :class="segment.param ? 'text-accent-ink' : ''"
         >{{ segment.text }}</span>
       </code>
 
       <span
         v-if="endpoint.rateLimit"
-        class="font-data ml-auto text-[11px] uppercase tracking-[0.14em] text-paper-faint"
+        class="font-data ml-auto text-[11px] uppercase tracking-[0.14em] text-ink-faint"
       >
         {{ endpoint.rateLimit }}
       </span>
     </header>
 
-    <h3 class="font-display mt-4 text-xl font-bold tracking-tight text-paper">
+    <h3 class="font-display mt-4 text-xl font-bold tracking-tight text-ink">
       {{ endpoint.summary }}
     </h3>
-    <p class="mt-2 max-w-2xl text-pretty leading-relaxed text-paper-dim">
+    <p class="mt-2 max-w-2xl text-pretty leading-relaxed text-ink-muted">
       <DocProse :text="endpoint.description" />
     </p>
 
@@ -74,22 +74,22 @@ const segments = computed(() =>
         :fields="endpoint.returns"
       />
       <div v-else class="flex items-baseline gap-3">
-        <span class="font-data text-[11px] uppercase tracking-[0.18em] text-paper-faint">
+        <span class="font-data text-[11px] uppercase tracking-[0.18em] text-ink-faint">
           Returns
         </span>
-        <span class="font-data text-xs text-paper-dim">
+        <span class="font-data text-xs text-ink-muted">
           {{ endpoint.responds.status }} — {{ endpoint.responds.description }}
         </span>
       </div>
 
       <div v-if="endpoint.errors?.length" class="flex flex-wrap items-baseline gap-x-3 gap-y-2">
-        <span class="font-data text-[11px] uppercase tracking-[0.18em] text-paper-faint">
+        <span class="font-data text-[11px] uppercase tracking-[0.18em] text-ink-faint">
           Can fail with
         </span>
         <span
           v-for="error in endpoint.errors"
           :key="error"
-          class="font-data rounded border border-line px-2 py-0.5 text-[11px] text-paper-dim"
+          class="font-data rounded border border-hairline px-2 py-0.5 text-[11px] text-ink-muted"
         >
           {{ error }}
         </span>

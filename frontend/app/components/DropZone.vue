@@ -52,11 +52,9 @@ function onSelect(event: Event) {
 
 <template>
   <div
-    class="panel relative overflow-hidden px-5 py-8 text-center transition-colors duration-200 sm:px-7 sm:py-6 sm:text-left"
+    class="panel px-5 py-8 text-center transition-colors duration-200 sm:px-7 sm:py-6 sm:text-left"
     :class="[
-      isOver
-        ? 'border-accent-400 shadow-[0_0_0_1px_oklch(0.822_0.145_79/0.5),0_0_60px_-12px_oklch(0.772_0.155_76/0.55)]'
-        : 'hover:border-line-lit',
+      isOver ? 'border-accent-500 bg-accent-500/[0.05]' : 'hover:border-hairline-strong',
       disabled && 'pointer-events-none opacity-50',
     ]"
     @dragenter.prevent="((depth++), (isOver = true))"
@@ -64,36 +62,21 @@ function onSelect(event: Event) {
     @dragleave.prevent="(--depth <= 0) && (isOver = false)"
     @drop.prevent="onDrop"
   >
-    <!-- The tray this drops into. It brightens on drag-over so the whole panel
-         confirms the drop target, not just the border. -->
-    <div
-      class="pointer-events-none absolute inset-0 transition-opacity duration-300"
-      :class="isOver ? 'opacity-100' : 'opacity-0'"
-      aria-hidden="true"
-      style="
-        background: radial-gradient(
-          40rem 14rem at 50% 0%,
-          oklch(0.772 0.155 76 / 0.14),
-          transparent 70%
-        );
-      "
-    />
-
     <!-- Wide bar at sm+, stacked on mobile. The whole panel is the drop target
          either way; the button is only there for people who would rather pick. -->
-    <div class="relative flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
+    <div class="flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
       <div
-        class="flex size-12 shrink-0 items-center justify-center rounded-full border border-accent-500/35 bg-accent-500/10 text-accent-300 transition-transform duration-300 ease-out"
-        :class="isOver && 'scale-110'"
+        class="flex size-11 shrink-0 items-center justify-center rounded-md transition-colors duration-200"
+        :class="isOver ? 'bg-accent-500 text-white' : 'bg-raised text-ink-muted'"
       >
         <UIcon name="i-lucide-upload" class="size-5" />
       </div>
 
       <div class="min-w-0 space-y-1 sm:flex-1">
-        <p class="font-display text-xl font-bold tracking-tight text-paper">
+        <p class="font-display text-lg font-medium tracking-[-0.02em] text-ink">
           {{ isOver ? 'Let go to upload' : 'Drop a file to start' }}
         </p>
-        <p class="text-sm text-paper-dim">
+        <p class="text-sm text-ink-muted">
           PDF, images or Office documents — up to
           {{ formatBytes(maxBytes) }} each
         </p>
@@ -104,12 +87,11 @@ function onSelect(event: Event) {
           color="primary"
           size="lg"
           icon="i-lucide-folder-open"
-          class="shadow-[0_0_30px_-8px_oklch(0.772_0.155_76/0.65)] hover:-translate-y-0.5 hover:shadow-[0_0_38px_-6px_oklch(0.772_0.155_76/0.8)]"
           @click="input?.click()"
         >
           Choose files
         </UButton>
-        <p class="font-data text-[10px] uppercase tracking-[0.14em] text-paper-faint">
+        <p class="font-data text-[10px] uppercase tracking-[0.14em] text-ink-faint">
           No account needed
         </p>
       </div>

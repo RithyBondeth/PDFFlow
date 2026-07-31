@@ -7,10 +7,10 @@ defineProps<{ label: string; fields: DocField[] }>()
 <template>
   <section>
     <div class="mb-3 flex items-baseline gap-3">
-      <h4 class="font-data text-[11px] uppercase tracking-[0.18em] text-paper-faint">
+      <h4 class="font-data text-[11px] uppercase tracking-[0.18em] text-ink-faint">
         {{ label }}
       </h4>
-      <span class="h-px flex-1 bg-line" aria-hidden="true" />
+      <span class="h-px flex-1 bg-hairline" aria-hidden="true" />
     </div>
 
     <!-- A definition list rather than a table: two of these columns are one
@@ -23,13 +23,13 @@ defineProps<{ label: string; fields: DocField[] }>()
         class="grid gap-x-4 gap-y-1 sm:grid-cols-[minmax(0,15rem)_1fr]"
       >
         <dt class="flex flex-wrap items-baseline gap-x-2">
-          <code class="font-data text-[13px] text-paper">{{ field.name }}</code>
-          <span class="font-data text-[11px] text-accent-300/80">{{ field.type }}</span>
-          <span v-if="field.note" class="font-data text-[11px] text-paper-faint">
+          <code class="font-data text-[13px] text-ink">{{ field.name }}</code>
+          <span class="font-data text-[11px] text-accent-ink/80">{{ field.type }}</span>
+          <span v-if="field.note" class="font-data text-[11px] text-ink-faint">
             {{ field.note }}
           </span>
         </dt>
-        <dd class="text-sm leading-relaxed text-paper-dim">
+        <dd class="text-sm leading-relaxed text-ink-muted">
           <DocProse :text="field.description" />
         </dd>
       </div>

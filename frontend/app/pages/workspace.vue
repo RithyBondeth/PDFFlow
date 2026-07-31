@@ -82,7 +82,7 @@ const savings = computed(() => {
       <div>
         <p class="eyebrow">Your session</p>
         <h1
-          class="font-display mt-3 text-3xl font-extrabold tracking-[-0.02em] text-paper sm:text-4xl"
+          class="font-display mt-3 text-3xl font-bold tracking-[-0.02em] text-ink sm:text-4xl"
         >
           {{ heading }}
         </h1>
@@ -91,7 +91,7 @@ const savings = computed(() => {
         variant="ghost"
         color="neutral"
         icon="i-lucide-rotate-ccw"
-        class="text-paper-dim hover:text-paper"
+        class="text-ink-muted hover:text-ink"
         @click="startOver"
       >
         Start over
@@ -116,11 +116,11 @@ const savings = computed(() => {
       <!-- Files -->
       <aside class="space-y-3">
         <div class="flex items-baseline gap-3">
-          <h2 class="font-data text-xs uppercase tracking-[0.2em] text-paper">
+          <h2 class="font-data text-xs uppercase tracking-[0.2em] text-ink">
             Files
           </h2>
-          <span class="h-px flex-1 bg-line" aria-hidden="true" />
-          <span class="font-data text-xs tabular-nums text-paper-faint">
+          <span class="h-px flex-1 bg-hairline" aria-hidden="true" />
+          <span class="font-data text-xs tabular-nums text-ink-faint">
             {{ formatBytes(workspace.totalSize) }}
           </span>
         </div>
@@ -132,7 +132,7 @@ const savings = computed(() => {
           @reorder="workspace.reorder"
         />
 
-        <p v-if="workspace.selectedOperation?.multiFile" class="text-xs text-paper-faint">
+        <p v-if="workspace.selectedOperation?.multiFile" class="text-xs text-ink-faint">
           Drag to set the order the files are combined in.
         </p>
       </aside>
@@ -142,10 +142,10 @@ const savings = computed(() => {
         <template v-if="!workspace.jobId">
           <div>
             <div class="mb-4 flex items-baseline gap-3">
-              <h2 class="font-data text-xs uppercase tracking-[0.2em] text-paper">
+              <h2 class="font-data text-xs uppercase tracking-[0.2em] text-ink">
                 Tools that fit these files
               </h2>
-              <span class="h-px flex-1 bg-line" aria-hidden="true" />
+              <span class="h-px flex-1 bg-hairline" aria-hidden="true" />
             </div>
             <div class="grid gap-3 sm:grid-cols-2">
               <ToolCard
@@ -177,7 +177,7 @@ const savings = computed(() => {
             icon="i-lucide-play"
             :class="
               canSubmit
-                ? 'shadow-[0_0_32px_-12px_oklch(0.772_0.155_76/0.55)] hover:shadow-[0_0_40px_-10px_oklch(0.772_0.155_76/0.7)]'
+                ? ''
                 : ''
             "
             @click="run"
@@ -196,22 +196,22 @@ const savings = computed(() => {
           />
 
           <!-- A finished result is the one thing on this page that is allowed to
-               look permanent, so it gets the fixer edge. -->
+               look settled, so it gets the good edge. -->
           <div
             v-if="job.state.status === 'completed'"
-            class="panel space-y-5 border-fixer/30 p-5 sm:p-6"
+            class="panel space-y-5 border-good/30 p-5 sm:p-6"
           >
             <div class="flex items-center gap-3">
               <span
-                class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-fixer/35 bg-fixer/10 text-fixer"
+                class="flex size-10 shrink-0 items-center justify-center rounded-lg border border-good/35 bg-good/10 text-good"
               >
                 <UIcon name="i-lucide-file-check-2" class="size-5" />
               </span>
               <div class="min-w-0">
-                <p class="truncate font-medium text-paper">
+                <p class="truncate font-medium text-ink">
                   {{ job.state.outputFilename }}
                 </p>
-                <p class="font-data text-xs tabular-nums text-paper-dim">
+                <p class="font-data text-xs tabular-nums text-ink-muted">
                   {{ formatBytes(job.state.outputSize ?? 0) }}
                   <template v-if="savings?.alreadyOptimized">
                     · already optimised, no reduction possible
@@ -232,12 +232,12 @@ const savings = computed(() => {
               color="primary"
               block
               icon="i-lucide-download"
-              class="shadow-[0_0_32px_-12px_oklch(0.772_0.155_76/0.55)] hover:shadow-[0_0_40px_-10px_oklch(0.772_0.155_76/0.7)]"
+             
             >
               Download result
             </UButton>
 
-            <p class="text-center text-xs text-paper-faint">
+            <p class="text-center text-xs text-ink-faint">
               This link stops working in {{ timeLeft }}, when the file is deleted.
             </p>
           </div>
@@ -248,7 +248,7 @@ const savings = computed(() => {
             color="neutral"
             block
             icon="i-lucide-plus"
-            class="text-paper-dim hover:text-paper"
+            class="text-ink-muted hover:text-ink"
             @click="startOver"
           >
             Work on another file

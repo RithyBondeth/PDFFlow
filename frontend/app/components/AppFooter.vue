@@ -1,39 +1,34 @@
 <template>
-  <footer class="mt-8 border-t border-line/80">
+  <footer class="mt-8 border-t border-hairline">
     <div class="reveal mx-auto max-w-6xl px-5 py-20 text-center sm:px-6">
       <p class="eyebrow">Nothing to sign up for</p>
       <h2
-        class="font-display mx-auto mt-5 max-w-xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight text-paper sm:text-5xl"
+        class="font-display mx-auto mt-5 max-w-xl text-balance text-4xl font-bold leading-[1.02] tracking-[-0.025em] text-ink sm:text-5xl"
       >
-        Bring a file. Leave with a file.
+        Bring a file.<br>
+        <span class="mark">Leave with a file.</span>
       </h2>
-      <p class="mx-auto mt-4 max-w-md text-pretty text-paper-dim">
+      <p class="mx-auto mt-5 max-w-md text-pretty text-ink-muted">
         Everything in between happens on our server and then stops existing.
       </p>
       <div class="mt-8">
-        <UButton
-          to="/#upload"
-          color="primary"
-          size="lg"
-          trailing-icon="i-lucide-arrow-right"
-          class="shadow-[0_0_36px_-8px_oklch(0.772_0.155_76/0.6)] hover:-translate-y-0.5 hover:shadow-[0_0_44px_-6px_oklch(0.772_0.155_76/0.75)]"
-        >
+        <UButton to="/#upload" color="primary" size="lg" trailing-icon="i-lucide-arrow-right">
           Add a file
         </UButton>
       </div>
     </div>
 
-    <div class="border-t border-line/60 py-8">
+    <div class="border-t border-hairline py-8">
       <div
         class="mx-auto flex max-w-6xl flex-col items-center gap-3 px-5 text-center sm:flex-row sm:justify-between sm:px-6 sm:text-left"
       >
-        <p class="font-data text-xs text-paper-faint">
+        <p class="font-data text-xs text-ink-faint">
           © {{ new Date().getFullYear() }} PDFFlow — no accounts, no tracking, no
           permanent storage.
         </p>
         <NuxtLink
           to="/api-docs"
-          class="font-data text-xs text-paper-faint underline decoration-line-lit underline-offset-4 transition-colors hover:text-accent-300"
+          class="font-data text-xs text-ink-faint underline decoration-hairline-strong underline-offset-4 transition-colors hover:text-accent-ink"
         >
           API reference
         </NuxtLink>

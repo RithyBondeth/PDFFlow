@@ -20,7 +20,7 @@ const parts = computed(() =>
 <template>
   <span>
     <template v-for="(part, index) in parts" :key="index">
-      <code v-if="part.code" class="font-data text-[0.9em] text-paper">{{ part.value }}</code>
+      <code v-if="part.code" class="font-data text-[0.9em] text-ink">{{ part.value }}</code>
       <template v-else>{{ part.value }}</template>
     </template>
   </span>
