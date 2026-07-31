@@ -43,6 +43,7 @@ useHead({
           'Split PDF',
           'Extract pages',
           'Rotate PDF',
+          'Organize PDF pages',
           'Compress PDF',
         ],
       }),

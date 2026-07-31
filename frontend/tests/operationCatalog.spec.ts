@@ -4,7 +4,7 @@ import { fallbackOperations } from '~/data/operationCatalog'
 describe('homepage operation catalog fallback', () => {
   it('keeps every public tool visible when the API is unavailable', () => {
     expect(fallbackOperations).toHaveLength(13)
-    expect(fallbackOperations.filter((operation) => operation.implemented)).toHaveLength(5)
+    expect(fallbackOperations.filter((operation) => operation.implemented)).toHaveLength(6)
     expect(new Set(fallbackOperations.map((operation) => operation.key)).size).toBe(13)
   })
 

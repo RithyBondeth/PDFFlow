@@ -117,7 +117,8 @@ export const ENDPOINTS: DocEndpoint[] = [
     }
   ],
   "availableOperations": [
-    { "key": "compress", "name": "Compress PDF", "implemented": true, "minFiles": 1 }
+    { "key": "compress", "name": "Compress PDF", "implemented": true, "minFiles": 1 },
+    { "key": "organize", "name": "Organize Pages", "implemented": true, "minFiles": 1 }
   ]
 }`,
       },
@@ -191,7 +192,8 @@ export const ENDPOINTS: DocEndpoint[] = [
           name: 'options',
           type: 'object',
           note: 'optional, max 32 keys',
-          description: 'Tool-specific settings, matching that tool’s optionsSchema.',
+          description:
+            'Tool-specific settings, matching that tool’s optionsSchema. Organize Pages accepts a `pages` array in output order; each item contains a 1-based `source` page and a `rotation` of 0, 90, 180 or 270.',
         },
       ],
     },
@@ -233,6 +235,25 @@ export const ENDPOINTS: DocEndpoint[] = [
   "completedAt": null,
   "expiresAt": "2026-07-31T11:34:02Z"
 }`,
+      },
+      {
+        label: 'Organize pages',
+        language: 'bash',
+        code: `# Output order: source page 3, then page 1 rotated, then another copy of page 1.
+# Omitting a source page deletes it from the result.
+curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "organize",
+    "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77"],
+    "options": {
+      "pages": [
+        { "source": 3, "rotation": 0 },
+        { "source": 1, "rotation": 90 },
+        { "source": 1, "rotation": 0 }
+      ]
+    }
+  }'`,
       },
     ],
   },
