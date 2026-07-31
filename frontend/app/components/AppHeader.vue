@@ -4,6 +4,7 @@ const route = useRoute()
 const links = [
   { label: 'Tools', to: '/#tools' },
   { label: 'How it works', to: '/#lifecycle' },
+  { label: 'Support', to: '/#support' },
   { label: 'API', to: '/api-docs' },
 ] as const
 

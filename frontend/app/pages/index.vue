@@ -312,5 +312,93 @@ const lifecycle = [
         </ol>
       </div>
     </section>
+
+    <!-- ==================== Community support ==================== -->
+    <section id="support" class="mx-auto max-w-6xl scroll-mt-16 px-5 pb-20 sm:px-6">
+      <div class="panel reveal overflow-hidden">
+        <div class="grid lg:grid-cols-[1fr_0.72fr]">
+          <div class="p-6 sm:p-10 lg:p-12">
+            <div class="flex items-center gap-3">
+              <span class="flex size-10 items-center justify-center rounded-md bg-accent-500/10 text-accent-ink">
+                <UIcon name="i-lucide-heart-handshake" class="size-5" />
+              </span>
+              <p class="eyebrow">Made in the open</p>
+            </div>
+
+            <h2
+              class="font-display mt-6 max-w-xl text-balance text-3xl font-bold tracking-[-0.02em] text-ink sm:text-[2.5rem]"
+            >
+              Help keep PDFFlow<br>
+              <span class="mark">free and growing.</span>
+            </h2>
+            <p class="mt-4 max-w-xl text-pretty leading-relaxed text-ink-muted">
+              If PDFFlow saved you a little time, a GitHub star helps more people
+              find it. Follow along to see new tools as they ship and help shape
+              what gets built next.
+            </p>
+
+            <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+              <UButton
+                to="https://github.com/RithyBondeth/PDFFlow"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="primary"
+                size="lg"
+                icon="i-lucide-star"
+                trailing-icon="i-lucide-external-link"
+              >
+                Star on GitHub
+              </UButton>
+              <UButton
+                to="https://github.com/RithyBondeth"
+                target="_blank"
+                rel="noopener noreferrer"
+                color="neutral"
+                variant="outline"
+                size="lg"
+                icon="i-lucide-github"
+              >
+                Follow @RithyBondeth
+              </UButton>
+            </div>
+          </div>
+
+          <div class="border-t border-hairline bg-sunken p-6 sm:p-10 lg:border-l lg:border-t-0 lg:p-12">
+            <div class="flex h-full flex-col justify-between gap-10">
+              <div>
+                <div class="flex items-center justify-between gap-4">
+                  <span class="flex size-11 items-center justify-center rounded-md bg-ink text-canvas">
+                    <UIcon name="i-lucide-github" class="size-5.5" />
+                  </span>
+                  <span class="font-data rounded-full border border-good/30 bg-good/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-good">
+                    Open source
+                  </span>
+                </div>
+
+                <p class="font-data mt-8 text-[11px] uppercase tracking-[0.14em] text-ink-faint">
+                  github.com
+                </p>
+                <p class="mt-1 font-display text-xl font-bold text-ink">
+                  RithyBondeth / PDFFlow
+                </p>
+                <p class="mt-3 text-sm leading-relaxed text-ink-muted">
+                  Every star is a small signal that this project is useful — and
+                  a lovely bit of fuel for the next release.
+                </p>
+              </div>
+
+              <div class="flex items-center gap-3 border-t border-hairline pt-5">
+                <span class="flex size-8 items-center justify-center rounded-full bg-accent-500/10 text-accent-ink">
+                  <UIcon name="i-lucide-sparkles" class="size-4" />
+                </span>
+                <p class="font-data text-[11px] uppercase tracking-[0.1em] text-ink-faint">
+                  One click · a big encouragement
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </template>
