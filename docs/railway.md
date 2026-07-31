@@ -60,6 +60,10 @@ Add the same GitHub repository again as a second service:
 - Root directory: `/frontend`
 - Railway config file: `/frontend/railway.toml`
 
+The Dockerfile path is repository-absolute (`/frontend/Dockerfile`) in the
+checked-in Railway configuration. Do not replace it with only `Dockerfile` in
+the dashboard.
+
 Set these variables, using the exact name of your backend service:
 
 ```dotenv
