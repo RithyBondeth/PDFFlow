@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Operation } from '~/types/api'
+import { fallbackOperations } from '~/data/operationCatalog'
 
 const api = useApi()
 const workspace = useWorkspaceStore()
@@ -55,8 +56,15 @@ const error = ref<string | null>(null)
 
 const { data: operations } = await useAsyncData<Operation[]>(
   'operations',
-  () => api.operations(),
-  { default: () => [] },
+  async () => {
+    try {
+      const catalog = await api.operations()
+      return catalog.length ? catalog : fallbackOperations
+    } catch {
+      return fallbackOperations
+    }
+  },
+  { default: () => fallbackOperations },
 )
 
 const categories = [
