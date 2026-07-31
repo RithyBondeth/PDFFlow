@@ -11,9 +11,15 @@ x-backend-env: &backend-env
   ENVIRONMENT: ${ENVIRONMENT:-development}
   DEBUG: ${DEBUG:-false}
   MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-104857600}
+  MAX_FILES_PER_JOB: ${MAX_FILES_PER_JOB:-25}
   FILE_TTL_MINUTES: ${FILE_TTL_MINUTES:-30}
   CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-300}
   CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost:3000}
+  # Every knob documented in .env.example must be forwarded here. A setting
+  # that is missing from this block does not fall back to .env — the container
+  # never sees it, and the code default silently wins instead.
+  RATE_LIMIT_UPLOADS: ${RATE_LIMIT_UPLOADS:-30/minute}
+  RATE_LIMIT_JOBS: ${RATE_LIMIT_JOBS:-60/minute}
   # Only nginx reaches the API, and it sits on the compose network — so the
   # private ranges are what we believe X-Forwarded-For from.
   TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7}

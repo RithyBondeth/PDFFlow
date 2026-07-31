@@ -264,23 +264,52 @@ components are left to `vue-tsc` and the production build. Restoring
 
 ## Deployment
 
-The Compose file is production-shaped but not production-configured. Before
-exposing it:
+The base Compose file runs plain HTTP and is meant for local development.
+Production adds an overlay,
+[`infrastructure/docker-compose.prod.yml`](infrastructure/docker-compose.prod.yml),
+which terminates TLS in Nginx, publishes 443, and swaps in
+[`nginx/conf.d.tls/`](infrastructure/nginx/conf.d.tls/pdfflow.conf) — a config
+that redirects port 80 to HTTPS, keeps `/.well-known/acme-challenge/`
+reachable for certificate renewal, and adds HSTS.
 
-1. **Terminate TLS.** Put a certificate on the Nginx service (or run it behind
-   a load balancer) and redirect port 80.
-2. **Change `POSTGRES_PASSWORD`** and set `ENVIRONMENT=production`,
+```bash
+cp .env.production.example .env
+```
+
+Edit it — at minimum `POSTGRES_PASSWORD`, `TLS_CERT_DIR` and `CORS_ORIGINS` —
+then:
+
+```bash
+docker compose --env-file .env -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml up -d --build
+```
+
+> **`--env-file .env` is required.** Two `-f` flags move Compose's project
+> directory to `infrastructure/`, so it no longer finds the `.env` at the
+> repository root and every `${VAR:-default}` quietly reverts to its
+> development default. `POSTGRES_PASSWORD` is one of them: omit the flag on a
+> fresh host and Postgres initialises with the default password while the
+> stack reports itself healthy.
+
+Still yours to check:
+
+1. **Change `POSTGRES_PASSWORD`** and confirm `ENVIRONMENT=production`,
    `DEBUG=false`.
-3. **Set `CORS_ORIGINS`** to your real origin only, and **`TRUSTED_PROXIES`**
-   to the network your load balancer actually sits in. Leaving it wider than
-   necessary means anything inside that range can forge a client IP and slip
-   the rate limits.
+2. **Set `CORS_ORIGINS`** to your real origin only, and **`TRUSTED_PROXIES`**
+   to the network Nginx actually sits in. Leaving it wider than necessary
+   means anything inside that range can forge a client IP and slip the rate
+   limits.
+3. **Point DNS at the host** before requesting a certificate — the HTTP-01
+   challenge resolves the name it is issuing for.
 4. **Keep exactly one `beat` replica.** Scale `worker` and `api` freely; a
    second beat would double every cleanup sweep.
 5. **Size the tmpfs volume** for your traffic — it is RAM. The default 2 GB
    holds roughly 20 concurrent maximum-size jobs.
 6. **Watch `/api/health`**, which reports Postgres and Redis separately and
    returns 503 when either is down.
+
+Every knob in `.env.example` must also appear in the `x-backend-env` block of
+the base Compose file. A variable missing there is not inherited from `.env` —
+the container never receives it and the code default wins silently.
 
 ## Roadmap
 
