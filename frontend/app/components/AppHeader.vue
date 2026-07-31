@@ -19,6 +19,14 @@ function isCurrent(to: string) {
   if (hash) return route.path === '/' && route.hash === `#${hash}`
   return route.path === path
 }
+
+function addFile() {
+  if (route.path === '/') {
+    window.dispatchEvent(new Event('pdfflow:choose-files'))
+    return
+  }
+  return navigateTo('/#upload')
+}
 </script>
 
 <template>
@@ -59,7 +67,14 @@ function isCurrent(to: string) {
 
       <div class="ml-auto flex items-center gap-2">
         <ThemeToggle />
-        <UButton to="/#upload" color="primary" size="sm">Add a file</UButton>
+        <UButton
+          color="primary"
+          size="sm"
+          icon="i-lucide-file-plus-2"
+          @click="addFile"
+        >
+          Add a file
+        </UButton>
       </div>
     </div>
   </header>

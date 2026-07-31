@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     Boolean,
@@ -16,6 +17,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, default_expiry
+
+if TYPE_CHECKING:
+    from app.models.job import Job
 
 
 class FileRecord(Base):
@@ -57,6 +61,6 @@ class FileRecord(Base):
         DateTime(timezone=True), nullable=False, default=default_expiry
     )
 
-    job: Mapped[Job | None] = relationship(back_populates="files")  # noqa: F821
+    job: Mapped[Job | None] = relationship(back_populates="files")
 
     __table_args__ = (Index("ix_file_records_expires_at", "expires_at", "deleted"),)

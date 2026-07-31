@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import AsyncIterator, Iterator
-from typing import Any
+from typing import Any, cast
 
 import redis
 import redis.asyncio as aioredis
@@ -53,7 +53,7 @@ def publish(job_id: Any, event: str, payload: dict) -> None:
 
 def last_event(job_id: Any) -> dict | None:
     try:
-        raw = client().get(f"{channel(job_id)}:last")
+        raw = cast(str | bytes | None, client().get(f"{channel(job_id)}:last"))
     except redis.RedisError:
         return None
     return json.loads(raw) if raw else None
@@ -98,7 +98,10 @@ def async_client() -> aioredis.Redis:
 
 async def last_event_async(conn: aioredis.Redis, job_id: Any) -> dict | None:
     try:
-        raw = await conn.get(f"{channel(job_id)}:last")
+        raw = cast(
+            str | bytes | None,
+            await conn.get(f"{channel(job_id)}:last"),
+        )
     except redis.RedisError:
         return None
     return json.loads(raw) if raw else None

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Operation } from '~/types/api'
+import { fallbackOperations } from '~/data/operationCatalog'
 
 const api = useApi()
 const workspace = useWorkspaceStore()
@@ -42,6 +43,7 @@ useHead({
           'Split PDF',
           'Extract pages',
           'Rotate PDF',
+          'Organize PDF pages',
           'Compress PDF',
         ],
       }),
@@ -55,8 +57,15 @@ const error = ref<string | null>(null)
 
 const { data: operations } = await useAsyncData<Operation[]>(
   'operations',
-  () => api.operations(),
-  { default: () => [] },
+  async () => {
+    try {
+      const catalog = await api.operations()
+      return catalog.length ? catalog : fallbackOperations
+    } catch {
+      return fallbackOperations
+    }
+  },
+  { default: () => fallbackOperations },
 )
 
 const categories = [
@@ -68,6 +77,7 @@ const categories = [
 ] as const
 
 const readyCount = computed(() => operations.value.filter((op) => op.implemented).length)
+const plannedCount = computed(() => operations.value.length - readyCount.value)
 
 function toolsIn(key: string) {
   return operations.value.filter((op) => op.category === key)
@@ -103,24 +113,36 @@ const promises = [
  */
 const lifecycle = [
   {
+    icon: 'i-lucide-cloud-upload',
     at: 't + 0s',
-    title: 'Arrives',
+    title: 'Upload',
     body: 'Written to a temporary directory under a random UUID. The name you gave it is never used on disk.',
+    mockTitle: 'quarterly-report.pdf',
+    mockMeta: '12.4 MB · temporary',
   },
   {
+    icon: 'i-lucide-wand-sparkles',
     at: 't + ~2s',
-    title: 'Processed',
+    title: 'Choose a tool',
     body: 'A background worker reads it, does the one operation you asked for, and writes the result.',
+    mockTitle: 'Compress PDF',
+    mockMeta: 'Processing securely',
   },
   {
+    icon: 'i-lucide-download',
     at: 'on request',
-    title: 'Downloaded',
+    title: 'Download',
     body: 'Fetched over a link tied to your job id. There is no index, no listing and no sharing.',
+    mockTitle: 'quarterly-report-compressed.pdf',
+    mockMeta: '3.9 MB · ready',
   },
   {
+    icon: 'i-lucide-trash-2',
     at: 't + 30 min',
-    title: 'Gone',
+    title: 'Auto-delete',
     body: 'Inputs are removed the moment the job ends, results within 30 minutes. A sweep runs every 5 minutes.',
+    mockTitle: 'Files deleted',
+    mockMeta: 'Nothing left behind',
   },
 ]
 </script>
@@ -189,17 +211,27 @@ const lifecycle = [
 
     <!-- ==================== Tools ==================== -->
     <section id="tools" class="mx-auto max-w-6xl scroll-mt-16 px-5 py-16 sm:px-6">
-      <div class="reveal max-w-2xl">
+      <div class="reveal max-w-3xl">
         <p class="eyebrow">The toolbox</p>
         <h2
           class="font-display mt-4 text-balance text-3xl font-bold tracking-[-0.02em] text-ink sm:text-[2.5rem]"
         >
           Everything you'd otherwise install software for
         </h2>
-        <p class="mt-3 text-pretty text-ink-muted">
-          Add your file first and PDFFlow shows only the tools that fit it — a
-          password can't be stripped off a JPEG, so it won't offer to.
+        <p class="mt-3 max-w-2xl text-pretty text-ink-muted">
+          Browse all {{ operations.length }} tools below. {{ readyCount }} work today
+          and {{ plannedCount }} are clearly marked as planned, with the accepted file
+          types, number of files and output format shown on every card.
         </p>
+
+        <div class="mt-5 flex flex-wrap gap-2">
+          <span class="font-data rounded-full border border-good/30 bg-good/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-good">
+            {{ readyCount }} ready now
+          </span>
+          <span class="font-data rounded-full border border-hairline px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+            {{ plannedCount }} on the roadmap
+          </span>
+        </div>
       </div>
 
       <div v-for="category in categories" :key="category.key" class="mt-12">
@@ -228,16 +260,16 @@ const lifecycle = [
     <!-- ==================== Lifecycle ==================== -->
     <section id="lifecycle" class="mx-auto max-w-6xl scroll-mt-16 px-5 py-20 sm:px-6">
       <div class="panel reveal overflow-hidden p-6 sm:p-10">
-        <div class="max-w-2xl">
-          <p class="eyebrow">What happens to your file</p>
+        <div class="max-w-3xl">
+          <p class="eyebrow">How it works</p>
           <h2
             class="font-display mt-4 text-balance text-3xl font-bold tracking-[-0.02em] text-ink sm:text-[2.5rem]"
           >
-            The whole life of an upload
+            From upload to automatic deletion
           </h2>
           <p class="mt-3 text-pretty text-ink-muted">
-            Most PDF sites ask you to trust a privacy policy. Here is the actual
-            sequence instead, with the times it happens at.
+            Four small steps, shown exactly as they happen. Your original file is
+            removed after processing and the result expires within 30 minutes.
           </p>
         </div>
 
@@ -247,19 +279,35 @@ const lifecycle = [
              dropped and each step keeps a plain left rule instead. -->
         <div class="fuse mt-10 hidden sm:block" style="--burn: 100%" aria-hidden="true" />
 
-        <ol class="mt-6 grid gap-8 sm:mt-0 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-4">
+        <ol class="mt-6 grid gap-4 sm:mt-0 sm:grid-cols-2 lg:grid-cols-4">
           <li
             v-for="step in lifecycle"
             :key="step.title"
-            class="relative border-l border-hairline pl-4 sm:border-l-0 sm:pl-0 sm:pt-7"
+            class="relative flex flex-col rounded-md border border-hairline bg-raised/60 p-4 sm:mt-7"
           >
-            <span
-              class="absolute left-0 top-0 hidden h-4 w-px bg-hairline-strong sm:block"
-              aria-hidden="true"
-            />
-            <p class="font-data text-xs tabular-nums text-accent-ink">{{ step.at }}</p>
-            <h3 class="mt-2 font-medium text-ink">{{ step.title }}</h3>
+            <div class="flex items-center justify-between gap-3">
+              <span class="flex size-9 items-center justify-center rounded-md bg-accent-500/10 text-accent-ink">
+                <UIcon :name="step.icon" class="size-4.5" />
+              </span>
+              <p class="font-data text-[10px] tabular-nums uppercase tracking-[0.1em] text-accent-ink">
+                {{ step.at }}
+              </p>
+            </div>
+
+            <h3 class="mt-4 font-display text-lg font-semibold text-ink">{{ step.title }}</h3>
             <p class="mt-1.5 text-sm leading-relaxed text-ink-muted">{{ step.body }}</p>
+
+            <div class="trough mt-5 flex items-center gap-2.5 p-2.5" aria-hidden="true">
+              <span class="flex size-7 shrink-0 items-center justify-center rounded bg-accent-500 text-white">
+                <UIcon :name="step.icon" class="size-3.5" />
+              </span>
+              <span class="min-w-0">
+                <span class="block truncate text-xs font-medium text-ink">{{ step.mockTitle }}</span>
+                <span class="font-data block truncate text-[9px] uppercase tracking-[0.08em] text-ink-faint">
+                  {{ step.mockMeta }}
+                </span>
+              </span>
+            </div>
           </li>
         </ol>
       </div>
