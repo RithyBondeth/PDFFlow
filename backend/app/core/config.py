@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     )
     redis_url: str = Field(default="redis://localhost:6379/0")
 
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _normalise_database_driver(cls, value: object) -> object:
+        """Make Railway's standard Postgres URL explicit for SQLAlchemy 2."""
+        if isinstance(value, str) and value.startswith("postgresql://"):
+            return value.replace("postgresql://", "postgresql+psycopg://", 1)
+        return value
+
     @property
     def celery_broker_url(self) -> str:
         return self.redis_url

@@ -64,6 +64,18 @@ def test_numeric_and_path_settings_load_from_env(monkeypatch: pytest.MonkeyPatch
     assert settings.processed_dir.as_posix() == "/data/storage/processed"
 
 
+def test_railway_postgres_url_uses_the_installed_driver(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv(
+        "DATABASE_URL", "postgresql://pdfflow:secret@postgres.railway.internal:5432/railway"
+    )
+
+    assert Settings().database_url == (
+        "postgresql+psycopg://pdfflow:secret@postgres.railway.internal:5432/railway"
+    )
+
+
 def test_env_example_values_all_load(monkeypatch: pytest.MonkeyPatch):
     """Every value shipped in .env.example must produce a usable Settings —
     this is the exact combination `docker compose up` feeds the containers."""
