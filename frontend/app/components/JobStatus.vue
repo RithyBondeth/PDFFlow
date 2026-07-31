@@ -14,43 +14,36 @@ const tone = computed(() => {
 </script>
 
 <template>
-  <div class="panel space-y-3 p-5">
+  <div class="panel space-y-4 p-5">
     <div class="flex items-center gap-3">
       <UIcon
         v-if="tone === 'active'"
         name="i-lucide-loader-2"
-        class="size-5 animate-spin text-accent-600"
+        class="size-5 animate-spin text-accent-300"
       />
-      <UIcon
-        v-else-if="tone === 'success'"
-        name="i-lucide-check-circle-2"
-        class="size-5 text-green-600"
-      />
-      <UIcon v-else name="i-lucide-alert-circle" class="size-5 text-red-600" />
+      <UIcon v-else-if="tone === 'success'" name="i-lucide-check" class="size-5 text-fixer" />
+      <UIcon v-else name="i-lucide-alert-triangle" class="size-5 text-alarm" />
 
-      <p class="flex-1 text-sm font-medium text-ink-200">
+      <p class="flex-1 text-sm font-medium text-paper">
         {{ errorMessage || label }}
       </p>
-      <span class="text-sm tabular-nums text-ink-400">{{ progress }}%</span>
+      <span class="font-data text-xs tabular-nums text-paper-dim">{{ progress }}%</span>
     </div>
 
+    <!-- Same rail as everywhere else, recoloured by outcome: the safelight
+         while it runs, fixer once it is a real result, alarm if it isn't. -->
     <div
-      class="h-1.5 w-full overflow-hidden rounded-full bg-ink-800"
+      class="fuse"
+      :class="{
+        'fuse-success': tone === 'success',
+        'fuse-error': tone === 'error',
+      }"
+      :style="{ '--burn': `${Math.max(progress, 3)}%` }"
       role="progressbar"
       :aria-valuenow="progress"
       aria-valuemin="0"
       aria-valuemax="100"
       :aria-label="label"
-    >
-      <div
-        class="h-full rounded-full transition-[width] duration-500 ease-out"
-        :class="{
-          'bg-accent-500': tone === 'active',
-          'bg-green-500': tone === 'success',
-          'bg-red-500': tone === 'error',
-        }"
-        :style="{ width: `${Math.max(progress, 4)}%` }"
-      />
-    </div>
+    />
   </div>
 </template>

@@ -5,7 +5,14 @@ export default defineAppConfig({
     // with the accent used everywhere else.
     colors: {
       primary: 'accent',
-      neutral: 'zinc',
+      neutral: 'slate',
+    },
+    button: {
+      // Every button here is either the safelight or invisible, and both should
+      // feel physical under the pointer.
+      slots: {
+        base: 'font-medium transition-all duration-200 active:scale-[0.97]',
+      },
     },
   },
 })

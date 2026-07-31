@@ -22,15 +22,34 @@ const emit = defineEmits<{
       @error="emit('error', $event)"
     />
 
-    <div v-else class="panel space-y-4 px-8 py-14">
-      <p class="text-lg font-medium text-ink-200">Uploading your file…</p>
-      <div class="h-1.5 overflow-hidden rounded-full bg-ink-800">
+    <!-- Same footprint and same arrangement as the drop zone, so the panel does
+         not jump when the upload starts. -->
+    <div v-else class="panel px-5 py-8 sm:px-7 sm:py-6">
+      <div class="flex flex-col items-center gap-5 sm:flex-row sm:gap-6">
         <div
-          class="h-full rounded-full bg-accent-500 transition-[width] duration-200"
-          :style="{ width: `${Math.max(progress, 3)}%` }"
-        />
+          class="flex size-12 shrink-0 items-center justify-center rounded-full border border-accent-500/35 bg-accent-500/10 text-accent-300"
+        >
+          <UIcon name="i-lucide-loader-2" class="size-5 animate-spin" />
+        </div>
+
+        <div class="w-full space-y-2.5 sm:flex-1">
+          <div class="flex items-baseline justify-between gap-4">
+            <p class="font-display text-xl font-bold tracking-tight text-paper">
+              Sending your file
+            </p>
+            <p class="font-data text-xs tabular-nums text-accent-300">{{ progress }}%</p>
+          </div>
+          <div
+            class="fuse"
+            :style="{ '--burn': `${Math.max(progress, 2)}%` }"
+            role="progressbar"
+            :aria-valuenow="progress"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            aria-label="Upload progress"
+          />
+        </div>
       </div>
-      <p class="text-sm tabular-nums text-ink-400">{{ progress }}%</p>
     </div>
   </div>
 </template>

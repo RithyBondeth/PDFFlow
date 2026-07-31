@@ -18,8 +18,12 @@ const STAGE_LABELS: Record<string, string> = {
   optimizing: 'Optimising…',
   writing: 'Generating result…',
   finishing: 'Almost done…',
+}
+
+const STATUS_LABELS: Record<string, string> = {
   completed: 'Ready to download',
-  failed: 'Processing failed',
+  failed: 'That did not work',
+  expired: 'This job has expired',
 }
 
 /**
@@ -42,12 +46,19 @@ export function useJobStream() {
   let source: EventSource | null = null
   let pollTimer: ReturnType<typeof setInterval> | null = null
 
-  const label = computed(
-    () => STAGE_LABELS[state.stage ?? ''] ?? 'Processing PDF…',
-  )
   const isTerminal = computed(
     () => state.status === 'completed' || state.status === 'failed' || state.status === 'expired',
   )
+
+  // Status wins once the job is over. The completed event does not always carry
+  // a matching stage, so reading the stage alone left finished jobs showing
+  // "Almost done…" next to their own download button.
+  const label = computed(() => {
+    if (isTerminal.value) {
+      return STATUS_LABELS[state.status] ?? 'Finished'
+    }
+    return STAGE_LABELS[state.stage ?? ''] ?? 'Working on your document…'
+  })
 
   function apply(data: Record<string, any>) {
     if (data.status) state.status = data.status
