@@ -65,6 +65,10 @@
 
   /* Small radii read as precise. Reahu's buttons are 4px. */
   --radius-panel: 8px;
+
+  /* Ruling for the grid backdrop, and the square it draws. */
+  --color-grid: oklch(0.2 0.01 265 / 0.055);
+  --grid-cell: 58px;
 }
 
 .dark {
@@ -86,6 +90,9 @@
   --color-good-soft: oklch(0.3 0.055 200);
   --color-bad: oklch(0.7 0.18 25);
   --color-bad-soft: oklch(0.32 0.09 25);
+
+  /* Light rules on a dark canvas need more presence than dark rules on white. */
+  --color-grid: oklch(0.95 0.01 265 / 0.07);
 }
 
 /* ---------------------------------------------------------------------------
@@ -188,6 +195,43 @@ body {
 :root .panel,
 .light .panel {
   box-shadow: 0 1px 2px oklch(0.2 0.01 265 / 0.04);
+}
+
+/* ---------------------------------------------------------------------------
+   Grid backdrop.
+
+   Fixed graph-paper ruling behind the whole app, faded out toward the bottom so
+   it frames the hero and then gets out of the way of long reading. Sits in a
+   positioned layer at z-index 0 with the content at z-index 10 — a negative
+   z-index would paint it behind the body's own background and vanish.
+   --------------------------------------------------------------------------- */
+.grid-rule {
+  background-image:
+    linear-gradient(to right, var(--color-grid) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid) 1px, transparent 1px);
+  background-size: var(--grid-cell) var(--grid-cell);
+  /* Anchored so the ruling stays put while the page scrolls over it. */
+  background-position: center top;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 92%);
+  mask-image: linear-gradient(to bottom, black 0%, black 45%, transparent 92%);
+}
+
+/* A soft accent wash drifting over the ruling. This is the only ambient motion
+   in the app; everything else is triggered by load, scroll or the pointer. */
+.grid-beam {
+  background: radial-gradient(
+    38rem 26rem at 50% 50%,
+    color-mix(in oklch, var(--color-accent-500) 16%, transparent),
+    transparent 70%
+  );
+}
+
+.dark .grid-beam {
+  background: radial-gradient(
+    38rem 26rem at 50% 50%,
+    color-mix(in oklch, var(--color-accent-500) 22%, transparent),
+    transparent 70%
+  );
 }
 
 /* Holds content rather than being content: code, trays, readouts. */
@@ -316,6 +360,55 @@ body {
   }
 }
 
+/* The highlighter drawing itself across the phrase, left to right. background-size
+   is animatable, so the stroke grows without the text reflowing. */
+@keyframes mark-draw {
+  from {
+    background-size: 0% 0.26em;
+  }
+  to {
+    background-size: 100% 0.26em;
+  }
+}
+
+/* The ambient wash, on a long slow circuit of the hero. */
+@keyframes beam-drift {
+  0% {
+    transform: translate3d(-18%, -12%, 0);
+  }
+  50% {
+    transform: translate3d(20%, 8%, 0);
+  }
+  100% {
+    transform: translate3d(-18%, -12%, 0);
+  }
+}
+
+/* A light passing along the band being rewritten, so the example panel reads as
+   mid-process rather than frozen. */
+@keyframes band-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+/* The active step in a sequence. A ring expanding outward, not the dot itself
+   scaling — scaling the dot makes the row of labels jitter. */
+@keyframes ping-ring {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
 /* `both` holds the opening frame during the delay so nothing flashes in before
    its turn. Staggering is the caller's job, via --enter-delay. */
 @media (prefers-reduced-motion: no-preference) {
@@ -329,6 +422,47 @@ body {
     animation-name: drift-in;
     animation-duration: 0.6s;
   }
+
+  /* Opt-in, and only above the fold. A stroke that draws itself while offscreen
+     is a wasted gesture, and the footer's marker is better left static. */
+  .mark-draw {
+    animation: mark-draw 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: var(--enter-delay, 0s);
+  }
+
+  .beam-drift {
+    animation: beam-drift 26s ease-in-out infinite;
+  }
+
+  .band-shimmer {
+    animation: band-shimmer 3.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .ping-ring {
+    animation: ping-ring 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+}
+
+/* Panels and cards rise slightly under the pointer. Transform and shadow only,
+   so nothing reflows and the hover cannot shift neighbouring cards. */
+.lift {
+  transition:
+    transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.lift:hover {
+  transform: translateY(-2px);
+}
+
+:root .lift:hover,
+.light .lift:hover {
+  box-shadow: 0 6px 20px -10px oklch(0.2 0.01 265 / 0.16);
+}
+
+.dark .lift:hover {
+  box-shadow: 0 6px 20px -10px oklch(0 0 0 / 0.5);
 }
 
 /* Scroll-driven, so there is no observer and no JS. `forwards` rather than
@@ -340,7 +474,11 @@ body {
     .reveal {
       animation: rise-in linear forwards;
       animation-timeline: view();
-      animation-range: entry 0% entry 50%;
+      /* Staggering a scroll-driven animation means shifting its *range*, not
+         adding a delay — a view() timeline is positional, so animation-delay
+         does nothing. Callers set --reveal-from per item to make a row of cards
+         arrive left to right. */
+      animation-range: entry var(--reveal-from, 0%) entry var(--reveal-to, 50%);
     }
   }
 }

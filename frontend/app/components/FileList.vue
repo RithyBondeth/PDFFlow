@@ -19,7 +19,7 @@ function onDrop(target: number) {
     <li
       v-for="(file, index) in files"
       :key="file.id"
-      class="panel group flex items-center gap-3 px-3.5 py-3 transition-all duration-200"
+      class="panel lift group flex items-center gap-3 px-3.5 py-3"
       :class="
         dragIndex === index
           ? 'border-accent-500 opacity-40'

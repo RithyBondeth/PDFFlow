@@ -26,13 +26,19 @@ const steps = [
     </div>
 
     <!-- A page rendered as its own text: rules of varying length, with one
-         accent band standing in for the region being rewritten. -->
+         accent band standing in for the region being rewritten. A light runs
+         along that band so the panel reads as mid-process rather than frozen. -->
     <div class="px-5 pt-5">
       <div class="trough space-y-2 p-4" aria-hidden="true">
         <div class="h-2 w-2/5 rounded-full bg-ink/25" />
         <div class="h-1.5 w-full rounded-full bg-ink/10" />
         <div class="h-1.5 w-11/12 rounded-full bg-ink/10" />
-        <div class="h-1.5 w-4/5 rounded-full bg-accent-500" />
+        <div class="relative h-1.5 w-4/5 overflow-hidden rounded-full bg-accent-500">
+          <div
+            class="band-shimmer absolute inset-y-0 left-0 w-1/3 bg-white/45"
+            style="mask-image: linear-gradient(90deg, transparent, white, transparent)"
+          />
+        </div>
         <div class="h-1.5 w-full rounded-full bg-ink/10" />
         <div class="h-1.5 w-3/5 rounded-full bg-ink/10" />
       </div>
@@ -46,15 +52,22 @@ const steps = [
         :key="step.label"
         class="flex flex-1 items-center gap-2"
       >
-        <span
-          class="size-1.5 shrink-0 rounded-full"
-          :class="{
-            'bg-good': step.state === 'done',
-            'bg-accent-500': step.state === 'active',
-            'bg-hairline-strong': step.state === 'waiting',
-          }"
-          aria-hidden="true"
-        />
+        <!-- The active step gets an expanding ring rather than a scaling dot:
+             scaling the dot itself would nudge the row of labels each cycle. -->
+        <span class="relative flex size-1.5 shrink-0" aria-hidden="true">
+          <span
+            v-if="step.state === 'active'"
+            class="ping-ring absolute inset-0 rounded-full bg-accent-500"
+          />
+          <span
+            class="relative size-1.5 rounded-full"
+            :class="{
+              'bg-good': step.state === 'done',
+              'bg-accent-500': step.state === 'active',
+              'bg-hairline-strong': step.state === 'waiting',
+            }"
+          />
+        </span>
         <span
           class="font-data whitespace-nowrap text-[10px] uppercase tracking-[0.14em]"
           :class="step.state === 'waiting' ? 'text-ink-faint' : 'text-ink-muted'"

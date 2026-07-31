@@ -97,7 +97,7 @@ const lifecycle = [
               style="--enter-delay: 0.08s"
             >
               PDF tools that<br>
-              <span class="mark">forget you were here.</span>
+              <span class="mark mark-draw" style="--enter-delay: 0.45s">forget you were here.</span>
             </h1>
 
             <p
@@ -171,9 +171,10 @@ const lifecycle = [
 
         <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <ToolCard
-            v-for="operation in toolsIn(category.key)"
+            v-for="(operation, index) in toolsIn(category.key)"
             :key="operation.key"
             :operation="operation"
+            :column="index % 3"
           />
         </div>
       </div>

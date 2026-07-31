@@ -149,9 +149,10 @@ const savings = computed(() => {
             </div>
             <div class="grid gap-3 sm:grid-cols-2">
               <ToolCard
-                v-for="operation in workspace.operations"
+                v-for="(operation, index) in workspace.operations"
                 :key="operation.key"
                 :operation="operation"
+                :column="index % 2"
                 :selected="workspace.selectedOperation?.key === operation.key"
                 @select="workspace.selectOperation"
               />
@@ -164,9 +165,9 @@ const savings = computed(() => {
             :operation="workspace.selectedOperation"
           />
 
-          <!-- Only a runnable action wears the safelight. Until a tool is
-               picked this is an outline, so nothing on the page looks pressable
-               that isn't. -->
+          <!-- Only a runnable action wears the accent. Until a tool is picked
+               this is an outline, so nothing on the page looks pressable that
+               isn't. -->
           <UButton
             size="xl"
             :color="canSubmit ? 'primary' : 'neutral'"
@@ -175,11 +176,6 @@ const savings = computed(() => {
             :loading="submitting"
             :disabled="!canSubmit"
             icon="i-lucide-play"
-            :class="
-              canSubmit
-                ? ''
-                : ''
-            "
             @click="run"
           >
             {{ workspace.selectedOperation ? `Run ${workspace.selectedOperation.name}` : 'Pick a tool to continue' }}
