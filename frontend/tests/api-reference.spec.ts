@@ -85,6 +85,14 @@ describe('api reference data', () => {
     expect(createJob?.body?.fields.find((field) => field.name === 'options')?.description)
       .toContain('1-based `source`')
   })
+
+  it('documents how to queue Office to PDF', () => {
+    const createJob = ENDPOINTS.find((endpoint) => endpoint.id === 'post-jobs-create')
+    const example = createJob?.samples.find((sample) => sample.label === 'Office to PDF')
+
+    expect(example?.code).toContain('"operation": "office_to_pdf"')
+    expect(example?.code).toContain('"options": {}')
+  })
 })
 
 describe('topmostVisible', () => {

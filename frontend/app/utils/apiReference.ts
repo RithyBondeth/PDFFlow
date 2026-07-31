@@ -255,6 +255,18 @@ curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
     }
   }'`,
       },
+      {
+        label: 'Office to PDF',
+        language: 'bash',
+        code: `# Upload the DOCX, XLSX or PPTX first, then use its returned file id.
+curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "office_to_pdf",
+    "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77"],
+    "options": {}
+  }'`,
+      },
     ],
   },
   {

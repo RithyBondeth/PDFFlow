@@ -56,10 +56,11 @@ async def upload(
                 upload_file.file, extension=kind.extension
             )
             stored_names.append(stored_name)
+            stored_path = storage.resolve("uploads", stored_name)
             page_count = None
             if kind.family == "pdf":
                 try:
-                    with storage.resolve("uploads", stored_name).open("rb") as pdf:
+                    with stored_path.open("rb") as pdf:
                         reader = PdfReader(pdf, strict=False)
                         if reader.is_encrypted:
                             raise ValidationError(
@@ -70,6 +71,8 @@ async def upload(
                     raise ValidationError("This file is not a readable PDF.") from exc
                 if page_count == 0:
                     raise ValidationError("This PDF has no pages.")
+            elif kind.family == "office":
+                validation.validate_office_document(stored_path, kind.extension)
             record = FileRecord(
                 original_name=validation.safe_display_name(upload_file.filename),
                 stored_name=stored_name,

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import zipfile
+from pathlib import Path
+
 import pytest
 
 from app.core.errors import UnsupportedFileTypeError
@@ -35,6 +38,32 @@ def test_rejects_unknown_extension() -> None:
 def test_family_restriction() -> None:
     with pytest.raises(UnsupportedFileTypeError):
         validation.classify("sheet.xlsx", ZIP_HEADER, allowed={"pdf"})
+
+
+def test_validates_the_claimed_office_package(tmp_path: Path, docx_bytes: bytes) -> None:
+    document = tmp_path / "report.docx"
+    document.write_bytes(docx_bytes)
+
+    validation.validate_office_document(document, ".docx")
+
+
+def test_rejects_a_zip_renamed_as_an_office_document(tmp_path: Path) -> None:
+    document = tmp_path / "report.docx"
+    with zipfile.ZipFile(document, "w") as archive:
+        archive.writestr("unrelated.txt", "not a Word document")
+
+    with pytest.raises(UnsupportedFileTypeError):
+        validation.validate_office_document(document, ".docx")
+
+
+def test_rejects_a_different_office_type_under_the_wrong_extension(
+    tmp_path: Path, docx_bytes: bytes
+) -> None:
+    document = tmp_path / "report.xlsx"
+    document.write_bytes(docx_bytes)
+
+    with pytest.raises(UnsupportedFileTypeError):
+        validation.validate_office_document(document, ".xlsx")
 
 
 @pytest.mark.parametrize(

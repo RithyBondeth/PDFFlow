@@ -166,7 +166,7 @@ export const fallbackOperations: Operation[] = [
     multiFile: false,
     minFiles: 1,
     outputExtension: '.pdf',
-    implemented: false,
+    implemented: true,
     optionsSchema: {},
   },
 ]

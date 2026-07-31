@@ -6,9 +6,11 @@ hints; the authoritative check is the file's own magic bytes.
 
 from __future__ import annotations
 
+import zipfile
 from dataclasses import dataclass
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
+from app.core.config import settings
 from app.core.errors import UnsupportedFileTypeError
 
 
@@ -44,6 +46,13 @@ _BY_EXTENSION: dict[str, FileKind] = {
 
 # Enough bytes for every signature below.
 SNIFF_BYTES = 32
+
+_OFFICE_REQUIRED_PART = {
+    ".docx": "word/document.xml",
+    ".xlsx": "xl/workbook.xml",
+    ".pptx": "ppt/presentation.xml",
+}
+_MAX_OFFICE_ARCHIVE_ENTRIES = 10_000
 
 
 def sniff(header: bytes) -> str | None:
@@ -98,6 +107,47 @@ def classify(
             f"This tool accepts {', '.join(sorted(allowed))} files."
         )
     return kind
+
+
+def validate_office_document(path: Path, extension: str) -> None:
+    """Confirm an OOXML upload is the document type its extension claims.
+
+    DOCX, XLSX and PPTX share ZIP magic bytes, so the short upload sniff can
+    only identify their family. Inspecting the central directory after the
+    file is safely stored rejects renamed ZIPs, encrypted entries and archive
+    bombs before LibreOffice sees them. Nothing from the archive is extracted.
+    """
+    required_part = _OFFICE_REQUIRED_PART.get(extension)
+    if required_part is None:
+        raise UnsupportedFileTypeError("Unsupported Office document type.")
+
+    try:
+        with zipfile.ZipFile(path) as archive:
+            entries = archive.infolist()
+            names = {entry.filename for entry in entries}
+            total_size = sum(entry.file_size for entry in entries)
+            unsafe_path = any(
+                PurePosixPath(entry.filename).is_absolute()
+                or ".." in PurePosixPath(entry.filename).parts
+                for entry in entries
+            )
+            encrypted = any(entry.flag_bits & 0x1 for entry in entries)
+    except (OSError, zipfile.BadZipFile, zipfile.LargeZipFile) as exc:
+        raise UnsupportedFileTypeError(
+            "This file is not a readable Office document."
+        ) from exc
+
+    if (
+        len(entries) > _MAX_OFFICE_ARCHIVE_ENTRIES
+        or total_size > settings.max_upload_bytes * 5
+        or unsafe_path
+        or encrypted
+    ):
+        raise UnsupportedFileTypeError("This Office document cannot be processed safely.")
+    if "[Content_Types].xml" not in names or required_part not in names:
+        raise UnsupportedFileTypeError(
+            "This file's contents do not match its Office document type."
+        )
 
 
 def family_of(mime_type: str) -> str:

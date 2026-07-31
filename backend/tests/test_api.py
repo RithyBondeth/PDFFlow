@@ -83,7 +83,7 @@ def test_operations_catalog_is_served(client):
     response = client.get("/api/operations")
     assert response.status_code == 200
     keys = {op["key"] for op in response.json()}
-    assert {"merge", "split", "compress", "rotate", "organize"} <= keys
+    assert {"merge", "split", "compress", "rotate", "organize", "office_to_pdf"} <= keys
 
 
 def test_upload_reports_pdf_page_count_and_offers_organize(client, pdf_bytes):
@@ -177,6 +177,87 @@ def test_upload_returns_file_and_applicable_tools(client, pdf_bytes):
     assert body["files"][0]["family"] == "pdf"
     # A single PDF cannot be merged, so merge must not be offered.
     assert "merge" not in {op["key"] for op in body["availableOperations"]}
+
+
+def test_upload_offers_the_ready_office_converter(client, docx_bytes):
+    response = client.post(
+        "/api/upload",
+        files={
+            "files": (
+                "Quarterly Report.docx",
+                docx_bytes,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["files"][0]["family"] == "office"
+    available = {op["key"]: op for op in body["availableOperations"]}
+    assert available["office_to_pdf"]["implemented"] is True
+
+
+def test_upload_rejects_a_plain_zip_renamed_to_docx(client):
+    from io import BytesIO
+    from zipfile import ZipFile
+
+    payload = BytesIO()
+    with ZipFile(payload, "w") as archive:
+        archive.writestr("note.txt", "not an Office document")
+
+    response = client.post(
+        "/api/upload",
+        files={"files": ("fake.docx", payload.getvalue(), "application/zip")},
+    )
+
+    assert response.status_code == 415
+    assert response.json()["error"]["code"] == "unsupported_file_type"
+
+
+def test_office_job_runs_and_downloads_as_pdf(
+    client, docx_bytes, monkeypatch: pytest.MonkeyPatch
+):
+    import subprocess
+
+    from pypdf import PdfWriter
+
+    from app.worker.operations import office_ops
+
+    monkeypatch.setattr(office_ops.shutil, "which", lambda _: "/usr/bin/soffice")
+
+    def fake_run(command, **kwargs):
+        source = Path(command[-1])
+        output = Path(command[command.index("--outdir") + 1]) / f"{source.stem}.pdf"
+        writer = PdfWriter()
+        writer.add_blank_page(width=595, height=842)
+        with output.open("wb") as result:
+            writer.write(result)
+        return subprocess.CompletedProcess(command, 0, b"", b"")
+
+    monkeypatch.setattr(office_ops.subprocess, "run", fake_run)
+    uploaded = client.post(
+        "/api/upload",
+        files={"files": ("Quarterly Report.docx", docx_bytes)},
+    ).json()
+
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "office_to_pdf",
+            "fileIds": [uploaded["files"][0]["id"]],
+            "options": {},
+        },
+    )
+
+    assert created.status_code == 201
+    job_id = created.json()["id"]
+    job = client.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "completed"
+    assert job["outputFilename"] == "Quarterly Report.pdf"
+    result = client.get(f"/api/download/{job_id}")
+    assert result.headers["content-type"] == "application/pdf"
+    assert result.content.startswith(b"%PDF-")
 
 
 def test_upload_rejects_content_type_mismatch(client):

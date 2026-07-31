@@ -178,6 +178,7 @@ CATALOG: tuple[Operation, ...] = (
         description="Convert DOCX, XLSX and PPTX using LibreOffice.",
         category="convert",
         accepts=frozenset({"office"}),
+        implemented=True,
     ),
 )
 

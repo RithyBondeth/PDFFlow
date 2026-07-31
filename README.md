@@ -102,10 +102,12 @@ Working end to end today:
 - **Extract Pages** — build a new document from a page selection
 - **Rotate PDF** — 90/180/270°, whole document or selected pages
 - **Compress PDF** — low/medium/high, reports original vs. compressed size
+- **Organize Pages** — reorder, rotate, duplicate and remove pages visually
+- **Office to PDF** — convert DOCX, XLSX or PPTX in an isolated LibreOffice worker
 
 Catalogued and surfaced in the UI as *Soon*, with handlers still to be written
-(see [Roadmap](#roadmap)): Organize Pages, Watermark, Protect, Unlock, Extract
-Images, Images→PDF, PDF→Images, Office→PDF.
+(see [Roadmap](#roadmap)): Watermark, Protect, Unlock, Extract Images,
+Images→PDF and PDF→Images.
 
 The tool catalog lives in one place ([`backend/app/services/operations.py`](backend/app/services/operations.py))
 and is served to the frontend over `/api/operations`, so the picker can never
@@ -243,12 +245,13 @@ pdfflow/
 cd backend && .venv/bin/pytest
 ```
 
-61 tests, no external services needed — the API suite runs against SQLite with
+The automated suite needs no external services — the API tests run against SQLite with
 Celery dispatch called inline, so it exercises the real upload → job → download
 path. Coverage focuses on the things that would hurt: path-traversal defences,
 the streaming size ceiling, MIME/extension mismatch detection, page-range
-parsing, every implemented PDF operation against a real generated PDF, error
-messages that must not leak internals, and the cleanup sweep.
+parsing, OOXML package validation, every implemented PDF operation, isolated
+LibreOffice invocation, error messages that must not leak internals, and the
+cleanup sweep.
 
 Frontend tests run with Vitest:
 

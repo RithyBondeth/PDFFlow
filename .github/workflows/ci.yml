@@ -63,3 +63,10 @@ jobs:
           -f infrastructure/docker-compose.yml
           -f infrastructure/docker-compose.prod.yml
           build
+      - run: >-
+          docker compose
+          --env-file .env.production.example
+          -f infrastructure/docker-compose.yml
+          -f infrastructure/docker-compose.prod.yml
+          run --rm --no-deps worker
+          python -m tests.container_office_smoke
