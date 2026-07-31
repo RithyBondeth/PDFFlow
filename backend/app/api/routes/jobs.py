@@ -1,4 +1,3 @@
-import asyncio
 import uuid
 
 from fastapi import APIRouter, Depends, Request, Response
@@ -69,31 +68,37 @@ async def stream_events(
     # 404/410 surfaces here rather than inside the stream body.
     job = job_service.get_job(db, job_id)
 
-    async def publisher():
-        # Replay current state first so a client that connects late — or after
-        # a very fast job — still sees the terminal event.
-        yield _frame(
-            "job_progress",
-            {
-                "id": str(job.id),
-                "status": job.status.value,
-                "progress": job.progress,
-                "stage": job.stage,
-            },
-        )
-        replayed = events.last_event(job.id)
-        if replayed:
-            yield _frame(replayed["event"], replayed["data"])
-            if replayed["event"] in {events.JOB_COMPLETED, events.JOB_FAILED}:
-                return
+    # Snapshot before streaming rather than reaching into `job` from inside the
+    # generator. FastAPI closes a yield-dependency before the response body is
+    # sent, so by then the session is gone and `job` is detached — today that
+    # happens to work because every column is already loaded, but it puts a
+    # DetachedInstanceError one added attribute away.
+    opening = {
+        "id": str(job.id),
+        "status": job.status.value,
+        "progress": job.progress,
+        "stage": job.stage,
+    }
 
-        loop = asyncio.get_running_loop()
-        stream = events.subscribe(job.id)
+    async def publisher():
+        conn = events.async_client()
         try:
-            while True:
+            # Replay current state first so a client that connects late — or
+            # after a very fast job — still sees the terminal event.
+            yield _frame("job_progress", opening)
+
+            replayed = await events.last_event_async(conn, job_id)
+            if replayed:
+                yield _frame(replayed["event"], replayed["data"])
+                if replayed["event"] in {events.JOB_COMPLETED, events.JOB_FAILED}:
+                    return
+
+            # Idling on the subscription parks a coroutine, not a thread: the
+            # blocking client would have needed one executor worker per
+            # connected browser, capping concurrent viewers at the pool size.
+            async for message in events.subscribe_async(conn, job_id):
                 if await request.is_disconnected():
                     return
-                message = await loop.run_in_executor(None, next, stream, None)
                 if message is None:
                     yield ": keep-alive\n\n"
                     continue
@@ -101,7 +106,7 @@ async def stream_events(
                 if message["event"] in {events.JOB_COMPLETED, events.JOB_FAILED}:
                     return
         finally:
-            stream.close()
+            await conn.aclose()
 
     return StreamingResponse(
         publisher(),

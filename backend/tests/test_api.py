@@ -6,6 +6,7 @@ worker runs. That keeps the test honest — it covers the real upload, job and
 download code paths — without needing Postgres or a broker.
 """
 
+import asyncio
 import uuid
 from pathlib import Path
 
@@ -372,3 +373,192 @@ def test_merge_follows_the_requested_file_order(client):
     assert [round(float(page.mediabox.width)) for page in merged.pages] == [
         widths[name] for name in requested
     ]
+
+
+# --- progress stream (SSE) ---------------------------------------------
+
+
+class _FakeRedis:
+    """Stands in for the per-connection async client the stream owns."""
+
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
+def stub_event_bus(monkeypatch, *, replay=None, live=()):
+    """Point the stream at canned events instead of Redis.
+
+    Returns the fake connection so a test can assert it was closed — a stream
+    that leaks its subscriber connection reintroduces the exhaustion problem
+    one layer down.
+    """
+    from app.services import events
+
+    conn = _FakeRedis()
+    monkeypatch.setattr(events, "async_client", lambda: conn)
+
+    async def last_event_async(_conn, _job_id):
+        return replay
+
+    async def subscribe_async(_conn, _job_id, **_kw):
+        for message in live:
+            if message is None:
+                # Idle like a real stream rather than spinning, so a test can
+                # hold the response open and inspect server state meanwhile.
+                await asyncio.sleep(0.01)
+            yield message
+
+    monkeypatch.setattr(events, "last_event_async", last_event_async)
+    monkeypatch.setattr(events, "subscribe_async", subscribe_async)
+    return conn
+
+
+def completed_job(client, pdf_bytes) -> str:
+    file_id = upload(client, "doc.pdf", pdf_bytes).json()["files"][0]["id"]
+    created = client.post(
+        "/api/jobs/create",
+        json={"operation": "compress", "fileIds": [file_id], "options": {}},
+    )
+    return created.json()["id"]
+
+
+def test_events_stream_replays_the_terminal_event_and_closes(
+    client, pdf_bytes, monkeypatch
+):
+    """A browser that subscribes after a fast job still learns it finished."""
+    job_id = completed_job(client, pdf_bytes)
+    conn = stub_event_bus(
+        monkeypatch,
+        replay={"event": "job_completed", "data": {"id": job_id, "status": "completed"}},
+    )
+
+    with client.stream("GET", f"/api/jobs/{job_id}/events") as response:
+        assert response.status_code == 200
+        assert response.headers["content-type"].startswith("text/event-stream")
+        body = "".join(response.iter_text())
+
+    assert "event: job_progress" in body
+    assert "event: job_completed" in body
+    assert conn.closed, "the subscriber connection must not be leaked"
+
+
+def test_events_stream_forwards_live_progress(client, pdf_bytes, monkeypatch):
+    job_id = completed_job(client, pdf_bytes)
+    stub_event_bus(
+        monkeypatch,
+        replay=None,
+        live=[
+            None,  # idle tick — becomes a keep-alive comment
+            {"event": "job_progress", "data": {"id": job_id, "progress": 70}},
+            {"event": "job_completed", "data": {"id": job_id, "status": "completed"}},
+        ],
+    )
+
+    with client.stream("GET", f"/api/jobs/{job_id}/events") as response:
+        body = "".join(response.iter_text())
+
+    assert ": keep-alive" in body
+    assert '"progress": 70' in body
+    assert body.count("event: job_completed") == 1
+
+
+def test_events_stream_releases_its_database_session_before_streaming(
+    client, pdf_bytes, monkeypatch
+):
+    """No connection may be checked out while a stream is open.
+
+    A stream lives until the job ends or nginx times it out an hour later, so
+    a session held for its duration would let ~30 watching browsers exhaust
+    the pool and stall the whole API.
+
+    FastAPI ≥0.106 already exits a yield-dependency before the response body is
+    sent, so `Depends(get_db)` satisfies this on its own — this test pins the
+    invariant rather than a fix. It still catches the ways it could be lost:
+    a hand-rolled `SessionLocal()` closed at the end of the generator, or a
+    FastAPI upgrade that moves teardown back after the response.
+    """
+    from app.db import session as db_session
+
+    opened, closed = [], []
+    make_session = db_session.SessionLocal
+
+    def tracking_factory():
+        session = make_session()
+        opened.append(session)
+        real_close = session.close
+
+        def close(*args, **kwargs):
+            closed.append(session)
+            return real_close(*args, **kwargs)
+
+        session.close = close
+        return session
+
+    def tracking_get_db():
+        session = tracking_factory()
+        try:
+            yield session
+        finally:
+            session.close()
+
+    job_id = completed_job(client, pdf_bytes)
+    # Track both routes into a session, so reverting to `Depends(get_db)` is
+    # caught as "still checked out" rather than slipping past unmeasured.
+    monkeypatch.setattr(db_session, "SessionLocal", tracking_factory)
+    from app.main import app
+
+    monkeypatch.setitem(app.dependency_overrides, db_session.get_db, tracking_get_db)
+    # An idle stream that stays OPEN while we look. A stub that ends
+    # immediately would let the response — and any dependency teardown with
+    # it — complete before the assertion, hiding exactly what we are testing.
+    stub_event_bus(monkeypatch, replay=None, live=[None] * 500)
+
+    with client.stream("GET", f"/api/jobs/{job_id}/events") as response:
+        next(response.iter_text())  # first frame is out, so streaming has begun
+        assert opened, "the stream should have read the job from the database"
+        assert len(closed) == len(opened), (
+            "a database session is still checked out while the stream is open"
+        )
+
+
+def test_events_stream_for_an_unknown_job_is_a_clean_404(client):
+    """The error must surface as a status code, not as a frame inside a 200
+    stream the client has to parse."""
+    response = client.get(f"/api/jobs/{uuid.uuid4()}/events")
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "not_found"
+
+
+def test_events_stream_never_uses_the_blocking_subscriber(
+    client, pdf_bytes, monkeypatch
+):
+    """The stream must idle on a coroutine, not a thread.
+
+    The blocking subscriber has to be driven with `run_in_executor`, which
+    parks one worker of the default executor per connected browser for as long
+    as that browser watches. That caps concurrent viewers at roughly
+    min(32, cpu+4) and starves everything else sharing the executor — the
+    limit is invisible until it is hit, and then it looks like a hang.
+    """
+    from app.services import events
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("the SSE path must not use the blocking subscriber")
+
+    monkeypatch.setattr(events, "subscribe", forbidden)
+
+    job_id = completed_job(client, pdf_bytes)
+    stub_event_bus(
+        monkeypatch,
+        replay=None,
+        live=[{"event": "job_completed", "data": {"id": job_id}}],
+    )
+
+    with client.stream("GET", f"/api/jobs/{job_id}/events") as response:
+        body = "".join(response.iter_text())
+
+    assert "event: job_completed" in body
