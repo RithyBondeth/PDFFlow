@@ -32,13 +32,19 @@ const burn = computed(() => {
   return burnPercent(workspace.expiresAt)
 })
 
+const toolOptionsValid = computed(() => {
+  if (workspace.selectedOperation?.key !== 'organize') return true
+  return Array.isArray(workspace.options.pages) && workspace.options.pages.length > 0
+})
+
 const canSubmit = computed(
   () =>
     workspace.selectedOperation !== null &&
     workspace.hasFiles &&
     !submitting.value &&
     !job.isTerminal.value &&
-    !workspace.jobId,
+    !workspace.jobId &&
+    toolOptionsValid.value,
 )
 
 async function run() {
@@ -172,6 +178,7 @@ const savings = computed(() => {
             v-if="workspace.selectedOperation"
             v-model="workspace.options"
             :operation="workspace.selectedOperation"
+            :page-count="workspace.files[0]?.pageCount"
           />
 
           <!-- Only a runnable action wears the accent. Until a tool is picked

@@ -77,8 +77,13 @@ export const fallbackOperations: Operation[] = [
     multiFile: false,
     minFiles: 1,
     outputExtension: '.pdf',
-    implemented: false,
-    optionsSchema: {},
+    implemented: true,
+    optionsSchema: {
+      pages: {
+        type: 'array',
+        minItems: 1,
+      },
+    },
   },
   {
     key: 'watermark',

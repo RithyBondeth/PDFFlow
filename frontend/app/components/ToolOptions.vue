@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import type { Operation } from '~/types/api'
+import type { OrganizedPage } from '~/utils/pageOrganizer'
+import { createPagePlan } from '~/utils/pageOrganizer'
 
 /**
  * Per-tool option form. Kept explicit rather than generated from the JSON
  * schema: each tool has a handful of options and a hand-written control reads
  * far better than a generic schema renderer.
  */
-const props = defineProps<{ operation: Operation }>()
+const props = defineProps<{ operation: Operation; pageCount?: number | null }>()
 const options = defineModel<Record<string, unknown>>({ required: true })
 
 function set(key: string, value: unknown) {
@@ -15,11 +17,12 @@ function set(key: string, value: unknown) {
 
 // Sensible defaults so the run button works without touching anything.
 watch(
-  () => props.operation.key,
-  (key) => {
+  () => [props.operation.key, props.pageCount] as const,
+  ([key, pageCount]) => {
     if (key === 'compress') options.value = { level: 'medium' }
     else if (key === 'rotate') options.value = { angle: 90, pages: '' }
     else if (key === 'split') options.value = { mode: 'every_page', ranges: '' }
+    else if (key === 'organize') options.value = { pages: createPagePlan(pageCount ?? 0) }
     else options.value = {}
   },
   { immediate: true },
@@ -116,6 +119,13 @@ const COMPRESSION_LEVELS = [
         @update:model-value="set('pages', $event)"
       />
     </UFormField>
+
+    <!-- Organize pages -->
+    <PageOrganizer
+      v-else-if="operation.key === 'organize'"
+      :model-value="(options.pages as OrganizedPage[]) ?? []"
+      @update:model-value="set('pages', $event)"
+    />
 
     <p v-else class="text-sm text-ink-muted">
       This tool has no options — just run it.

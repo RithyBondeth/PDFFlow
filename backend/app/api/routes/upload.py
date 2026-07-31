@@ -2,6 +2,8 @@ import logging
 from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, Request, Response, UploadFile
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -42,6 +44,7 @@ async def upload(
 
     expires_at = datetime.now(UTC) + timedelta(minutes=settings.file_ttl_minutes)
     saved: list[FileRecord] = []
+    stored_names: list[str] = []
 
     try:
         for upload_file in files:
@@ -52,11 +55,27 @@ async def upload(
             stored_name, size = storage.save_stream(
                 upload_file.file, extension=kind.extension
             )
+            stored_names.append(stored_name)
+            page_count = None
+            if kind.family == "pdf":
+                try:
+                    with storage.resolve("uploads", stored_name).open("rb") as pdf:
+                        reader = PdfReader(pdf, strict=False)
+                        if reader.is_encrypted:
+                            raise ValidationError(
+                                "This PDF is password protected. Unlock it first."
+                            )
+                        page_count = len(reader.pages)
+                except (PdfReadError, OSError) as exc:
+                    raise ValidationError("This file is not a readable PDF.") from exc
+                if page_count == 0:
+                    raise ValidationError("This PDF has no pages.")
             record = FileRecord(
                 original_name=validation.safe_display_name(upload_file.filename),
                 stored_name=stored_name,
                 size=size,
                 mime_type=kind.mime_type,
+                page_count=page_count,
                 expires_at=expires_at,
             )
             db.add(record)
@@ -64,8 +83,8 @@ async def upload(
         db.commit()
     except Exception:
         db.rollback()
-        for record in saved:
-            storage.delete("uploads", record.stored_name)
+        for stored_name in stored_names:
+            storage.delete("uploads", stored_name)
         raise
 
     for record in saved:
@@ -79,6 +98,14 @@ async def upload(
         if families <= op.accepts
         and len(saved) >= op.min_files
         and (len(saved) == 1 or op.multi_file)
+        and (
+            op.key != "organize"
+            or all(
+                record.page_count is not None
+                and record.page_count <= operations.MAX_ORGANIZED_PAGES
+                for record in saved
+            )
+        )
     ]
 
     logger.info("files_uploaded", extra={"count": len(saved)})

@@ -13,6 +13,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from app.core.errors import ValidationError
+
+MAX_ORGANIZED_PAGES = 1000
+
 
 @dataclass(frozen=True)
 class Operation:
@@ -106,7 +110,21 @@ CATALOG: tuple[Operation, ...] = (
         description="Reorder, delete, rotate and duplicate pages visually.",
         category="organize",
         accepts=frozenset({"pdf"}),
-        options_schema={"pages": {"type": "array"}},
+        implemented=True,
+        options_schema={
+            "pages": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                    "type": "object",
+                    "required": ["source", "rotation"],
+                    "properties": {
+                        "source": {"type": "integer", "minimum": 1},
+                        "rotation": {"type": "integer", "enum": [0, 90, 180, 270]},
+                    },
+                },
+            }
+        },
     ),
     Operation(
         key="watermark",
@@ -168,3 +186,33 @@ BY_KEY: dict[str, Operation] = {op.key: op for op in CATALOG}
 
 def get(key: str) -> Operation | None:
     return BY_KEY.get(key)
+
+
+def organization_plan(value: object, page_count: int) -> list[dict[str, int]]:
+    """Validate and normalize the explicit output plan for Organize Pages.
+
+    This runs before a job is persisted and again in the worker. Keeping the
+    nested payload bounded at the API edge prevents a huge page array from
+    being stored or queued before the operation gets a chance to reject it.
+    """
+    if not isinstance(value, list) or not value:
+        raise ValidationError("Keep at least one page in the organized PDF.")
+    if len(value) > MAX_ORGANIZED_PAGES:
+        raise ValidationError(
+            f"An organized PDF can contain at most {MAX_ORGANIZED_PAGES} pages."
+        )
+
+    plan: list[dict[str, int]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            raise ValidationError("The page arrangement is invalid.")
+        source = item.get("source")
+        rotation = item.get("rotation", 0)
+        if type(source) is not int or not 1 <= source <= page_count:
+            raise ValidationError(
+                f"A selected page is out of range — this document has {page_count} pages."
+            )
+        if type(rotation) is not int or rotation not in (0, 90, 180, 270):
+            raise ValidationError("Page rotation must be 0, 90, 180 or 270 degrees.")
+        plan.append({"source": source, "rotation": rotation})
+    return plan

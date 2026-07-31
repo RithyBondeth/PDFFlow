@@ -15,6 +15,7 @@ from pypdf import PdfReader, PdfWriter
 from pypdf.errors import PdfReadError
 
 from app.core.errors import ValidationError
+from app.services.operations import organization_plan
 from app.worker.operations import OperationContext, OperationResult, register
 from app.worker.operations.pageranges import parse as parse_pages
 
@@ -94,6 +95,32 @@ def rotate(ctx: OperationContext) -> OperationResult:
         writer.write(fh)
     name = f"{_stem(ctx.original_names[0])}-rotated.pdf"
     return OperationResult(output, name, {"rotatedPages": len(targets), "angle": angle})
+
+
+@register("organize")
+def organize(ctx: OperationContext) -> OperationResult:
+    reader = _open(ctx.inputs[0])
+    source_count = len(reader.pages)
+    pages = organization_plan(ctx.options.get("pages"), source_count)
+
+    writer = PdfWriter()
+    for position, item in enumerate(pages, start=1):
+        # PdfWriter clones the source page. Rotate that clone so duplicating one
+        # source page with different rotations cannot mutate the later copies.
+        writer.add_page(reader.pages[item["source"] - 1])
+        if item["rotation"]:
+            writer.pages[-1].rotate(item["rotation"])
+        ctx.progress(30 + int(50 * position / len(pages)), "organizing")
+
+    output = ctx.workdir / "organized.pdf"
+    with output.open("wb") as fh:
+        writer.write(fh)
+    name = f"{_stem(ctx.original_names[0])}-organized.pdf"
+    return OperationResult(
+        output,
+        name,
+        {"pageCount": len(pages), "sourcePageCount": source_count},
+    )
 
 
 @register("split")

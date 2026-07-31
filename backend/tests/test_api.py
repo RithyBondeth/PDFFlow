@@ -83,7 +83,19 @@ def test_operations_catalog_is_served(client):
     response = client.get("/api/operations")
     assert response.status_code == 200
     keys = {op["key"] for op in response.json()}
-    assert {"merge", "split", "compress", "rotate"} <= keys
+    assert {"merge", "split", "compress", "rotate", "organize"} <= keys
+
+
+def test_upload_reports_pdf_page_count_and_offers_organize(client, pdf_bytes):
+    response = upload(client, "doc.pdf", pdf_bytes)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["files"][0]["pageCount"] == 3
+    available = {
+        operation["key"]: operation for operation in payload["availableOperations"]
+    }
+    assert available["organize"]["implemented"] is True
 
 
 def test_rate_limited_routes_inject_their_headers(client, pdf_bytes):
@@ -205,6 +217,59 @@ def test_job_runs_and_result_downloads(client, pdf_bytes):
     assert result.headers["content-type"] == "application/pdf"
     assert "attachment" in result.headers["content-disposition"]
     assert result.content.startswith(b"%PDF")
+
+
+def test_organize_job_reorders_rotates_duplicates_and_deletes(client):
+    from io import BytesIO
+
+    from pypdf import PdfReader, PdfWriter
+
+    writer = PdfWriter()
+    for width in (300, 400, 500):
+        writer.add_blank_page(width=width, height=842)
+    source = BytesIO()
+    writer.write(source)
+
+    file_id = upload(client, "pages.pdf", source.getvalue()).json()["files"][0]["id"]
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "organize",
+            "fileIds": [file_id],
+            "options": {
+                "pages": [
+                    {"source": 3, "rotation": 0},
+                    {"source": 1, "rotation": 90},
+                    {"source": 1, "rotation": 0},
+                ]
+            },
+        },
+    )
+
+    assert created.status_code == 201
+    job_id = created.json()["id"]
+    job = client.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "completed"
+    assert job["outputFilename"] == "pages-organized.pdf"
+
+    result = PdfReader(BytesIO(client.get(f"/api/download/{job_id}").content))
+    assert [round(float(page.mediabox.width)) for page in result.pages] == [500, 300, 300]
+    assert [page.get("/Rotate", 0) for page in result.pages] == [0, 90, 0]
+
+
+def test_organize_rejects_an_invalid_plan_before_queueing(client, pdf_bytes):
+    file_id = upload(client, "pages.pdf", pdf_bytes).json()["files"][0]["id"]
+    response = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "organize",
+            "fileIds": [file_id],
+            "options": {"pages": [{"source": 99, "rotation": 0}]},
+        },
+    )
+
+    assert response.status_code == 422
+    assert "out of range" in response.json()["error"]["message"]
 
 
 def test_inputs_are_deleted_once_the_job_finishes(client, pdf_bytes, isolated_storage):
@@ -519,9 +584,9 @@ def test_events_stream_releases_its_database_session_before_streaming(
     with client.stream("GET", f"/api/jobs/{job_id}/events") as response:
         next(response.iter_text())  # first frame is out, so streaming has begun
         assert opened, "the stream should have read the job from the database"
-        assert len(closed) == len(opened), (
-            "a database session is still checked out while the stream is open"
-        )
+        assert len(closed) == len(
+            opened
+        ), "a database session is still checked out while the stream is open"
 
 
 def test_events_stream_for_an_unknown_job_is_a_clean_404(client):
@@ -533,9 +598,7 @@ def test_events_stream_for_an_unknown_job_is_a_clean_404(client):
     assert response.json()["error"]["code"] == "not_found"
 
 
-def test_events_stream_never_uses_the_blocking_subscriber(
-    client, pdf_bytes, monkeypatch
-):
+def test_events_stream_never_uses_the_blocking_subscriber(client, pdf_bytes, monkeypatch):
     """The stream must idle on a coroutine, not a thread.
 
     The blocking subscriber has to be driven with `run_in_executor`, which
