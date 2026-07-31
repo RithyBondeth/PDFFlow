@@ -1,0 +1,31 @@
+[project]
+name = "pdfflow-backend"
+version = "0.1.0"
+description = "PDFFlow API and processing worker"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q --strict-markers"
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 90
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "S"]
+ignore = ["S101"]  # asserts are the point in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]
+# `Depends(...)`/`File(...)` in a default is how FastAPI declares dependencies;
+# B008 is a false positive for route signatures.
+"app/api/routes/*" = ["B008"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = []
+ignore_missing_imports = true
+warn_unused_ignores = true

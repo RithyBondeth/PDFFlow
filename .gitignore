@@ -2,6 +2,10 @@
 .env
 .env.local
 
+# TLS material and ACME challenge scratch space never belong in the repo.
+infrastructure/certbot-webroot/
+*.pem
+
 # --- user data ---------------------------------------------------------
 # Nothing under storage/ should ever be committed; it is by definition
 # temporary user documents.
