@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -179,3 +180,62 @@ def test_compress_result_is_always_a_readable_pdf(tmp_path: Path, pdf_file: Path
     result = get_handler("compress")(make_context(tmp_path, [pdf_file], level="medium"))
 
     assert len(PdfReader(str(result.path)).pages) == 3
+
+
+def test_office_to_pdf_uses_an_isolated_headless_process(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.worker.operations import office_ops
+
+    source = tmp_path / "server-generated.docx"
+    source.write_bytes(b"office")
+    recorded: dict = {}
+
+    def fake_run(command, **kwargs):
+        recorded["command"] = command
+        recorded["kwargs"] = kwargs
+        output = Path(command[command.index("--outdir") + 1]) / f"{source.stem}.pdf"
+        writer = PdfWriter()
+        writer.add_blank_page(width=595, height=842)
+        with output.open("wb") as result:
+            writer.write(result)
+        return subprocess.CompletedProcess(command, 0, b"", b"")
+
+    monkeypatch.setattr(office_ops.shutil, "which", lambda _: "/usr/bin/soffice")
+    monkeypatch.setattr(office_ops.subprocess, "run", fake_run)
+    context = OperationContext(
+        job_id="test",
+        inputs=[source],
+        original_names=["Revenue; rm -rf workspace.docx"],
+        options={},
+        progress=lambda *_: None,
+        workdir=tmp_path,
+    )
+
+    result = get_handler("office_to_pdf")(context)
+
+    assert result.filename == "Revenue; rm -rf workspace.pdf"
+    assert result.path.read_bytes().startswith(b"%PDF-")
+    assert result.metadata == {"sourceFormat": "DOCX"}
+    assert recorded["command"][-1] == str(source)
+    assert "Revenue; rm -rf workspace.docx" not in recorded["command"]
+    assert recorded["kwargs"]["timeout"] == office_ops.CONVERSION_TIMEOUT_SECONDS
+    assert recorded["kwargs"]["env"]["HOME"].endswith("libreoffice-profile")
+
+
+def test_office_to_pdf_reports_a_conversion_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.worker.operations import office_ops
+
+    source = tmp_path / "server-generated.xlsx"
+    source.write_bytes(b"office")
+    monkeypatch.setattr(office_ops.shutil, "which", lambda _: "/usr/bin/soffice")
+
+    def time_out(command, **kwargs):
+        raise subprocess.TimeoutExpired(command, kwargs["timeout"])
+
+    monkeypatch.setattr(office_ops.subprocess, "run", time_out)
+
+    with pytest.raises(ValidationError, match="too long"):
+        get_handler("office_to_pdf")(make_context(tmp_path, [source]))

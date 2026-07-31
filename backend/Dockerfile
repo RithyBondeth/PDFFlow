@@ -26,16 +26,14 @@ EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 # --- worker ------------------------------------------------------------
-# NOTE: the office_to_pdf operation needs LibreOffice headless. It is not
-# implemented yet, and installing three LibreOffice suites adds ~1 GB and
-# ~25 minutes to every worker build, so the dependency lands with the feature.
-# When implementing it, uncomment:
-#
-#   RUN apt-get update && apt-get install -y --no-install-recommends \
-#           libreoffice-writer libreoffice-calc libreoffice-impress \
-#           fonts-dejavu-core \
-#       && rm -rf /var/lib/apt/lists/*
 FROM base AS worker
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libreoffice-writer \
+        libreoffice-calc \
+        libreoffice-impress \
+        fonts-dejavu-core \
+        fonts-liberation \
+    && rm -rf /var/lib/apt/lists/*
 COPY backend /app
 COPY database /database
 RUN useradd --create-home --uid 10001 pdfflow \

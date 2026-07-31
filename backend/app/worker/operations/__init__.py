@@ -49,4 +49,7 @@ def get_handler(key: str) -> Handler | None:
     return REGISTRY.get(key)
 
 
-from app.worker.operations import pdf_ops  # noqa: E402,F401  (populates REGISTRY)
+from app.worker.operations import (  # noqa: E402,F401  (populates REGISTRY)
+    office_ops,
+    pdf_ops,
+)
