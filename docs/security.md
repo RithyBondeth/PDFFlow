@@ -132,7 +132,10 @@ secrets.
 - [ ] `CORS_ORIGINS` set to the real origin only — not a wildcard.
 - [ ] `DEBUG=false`, `ENVIRONMENT=production`.
 - [ ] Storage volume is tmpfs, or on an encrypted disk if it must be durable.
-- [ ] Logs shipped somewhere that is *not* retained forever, and scrubbed of
-      request URLs containing job ids.
+- [ ] Logs shipped somewhere that is *not* retained forever. Nginx already
+      redacts job ids from access logs via the `$safe_request_uri` map in
+      `nginx.conf` — if you add a log format, a downstream collector, or an
+      access_log directive of your own, re-check that it does not reintroduce
+      `$request` or `$request_uri`.
 - [ ] Exactly one `beat` replica.
 - [ ] `/api/health` monitored.
