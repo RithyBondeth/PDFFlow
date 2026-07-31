@@ -2,6 +2,7 @@
 const links = [
   { label: 'Tools', to: '/#tools' },
   { label: 'How it works', to: '/#lifecycle' },
+  { label: 'API', to: '/api-docs' },
 ] as const
 </script>
 
@@ -31,18 +32,6 @@ const links = [
           class="text-paper-dim hover:text-paper"
         >
           {{ link.label }}
-        </UButton>
-        <!-- Swagger UI is served by FastAPI, not Nuxt: `external` stops the
-             router from trying to resolve /docs as a page and 404ing. -->
-        <UButton
-          to="/docs"
-          external
-          target="_blank"
-          variant="ghost"
-          color="neutral"
-          class="text-paper-dim hover:text-paper"
-        >
-          API
         </UButton>
       </nav>
 

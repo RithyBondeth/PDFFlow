@@ -32,9 +32,7 @@
           permanent storage.
         </p>
         <NuxtLink
-          to="/docs"
-          external
-          target="_blank"
+          to="/api-docs"
           class="font-data text-xs text-paper-faint underline decoration-line-lit underline-offset-4 transition-colors hover:text-accent-300"
         >
           API reference
