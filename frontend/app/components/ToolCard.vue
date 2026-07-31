@@ -36,6 +36,20 @@ const ICONS: Record<string, string> = {
 }
 
 const icon = computed(() => ICONS[props.operation.key] ?? 'i-lucide-wand-2')
+
+const FAMILY_LABELS: Record<string, string> = {
+  pdf: 'PDF input',
+  image: 'Image input',
+  office: 'Office input',
+}
+
+const details = computed(() => [
+  props.operation.accepts.map((family) => FAMILY_LABELS[family] ?? family).join(' + '),
+  props.operation.multiFile
+    ? `${props.operation.minFiles > 1 ? `${props.operation.minFiles}+` : 'Multiple'} files`
+    : 'Single file',
+  `${props.operation.outputExtension.replace('.', '').toUpperCase()} output`,
+])
 </script>
 
 <template>
@@ -66,19 +80,27 @@ const icon = computed(() => ICONS[props.operation.key] ?? 'i-lucide-wand-2')
       </span>
       <span class="font-medium text-ink">{{ operation.name }}</span>
       <span
-        v-if="!operation.implemented"
-        class="font-data ml-auto text-[10px] uppercase tracking-[0.14em] text-ink-faint"
+        class="font-data ml-auto rounded-full border px-2 py-0.5 text-[9px] uppercase tracking-[0.12em]"
+        :class="
+          operation.implemented
+            ? 'border-good/30 bg-good/10 text-good'
+            : 'border-hairline text-ink-faint'
+        "
       >
-        Soon
+        {{ operation.implemented ? 'Ready' : 'Planned' }}
       </span>
-      <UIcon
-        v-else-if="selected"
-        name="i-lucide-check"
-        class="ml-auto size-4 text-accent-ink"
-      />
     </div>
     <p class="text-sm leading-snug text-ink-muted">
       {{ operation.description }}
     </p>
+    <ul class="mt-auto flex flex-wrap gap-1.5 pt-1">
+      <li
+        v-for="detail in details"
+        :key="detail"
+        class="font-data rounded border border-hairline px-1.5 py-1 text-[9px] uppercase tracking-[0.08em] text-ink-faint"
+      >
+        {{ detail }}
+      </li>
+    </ul>
   </button>
 </template>

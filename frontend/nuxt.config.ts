@@ -8,6 +8,13 @@ export default defineNuxtConfig({
 
   modules: ['@nuxt/ui', '@pinia/nuxt', '@vueuse/nuxt'],
 
+  // `/api` belongs to FastAPI at the reverse proxy. Nuxt Icon's default
+  // fallback endpoint lives there too, which made every icon request miss the
+  // frontend in production even when the collection was bundled locally.
+  icon: {
+    localApiEndpoint: '/_nuxt_icon',
+  },
+
   css: ['~/assets/css/main.css'],
 
   runtimeConfig: {
@@ -20,6 +27,11 @@ export default defineNuxtConfig({
       // Behind nginx the API is same-origin, so a relative base is correct in
       // production. `nuxt dev` overrides it via NUXT_PUBLIC_API_BASE.
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',
+
+      // Canonical, Open Graph and sitemap URLs have to be absolute, and the
+      // app cannot infer its own public origin from behind a proxy. Set
+      // NUXT_PUBLIC_SITE_URL per environment; the default is production.
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://pdfflow.bondeth.site',
     },
   },
 
@@ -49,7 +61,7 @@ export default defineNuxtConfig({
         },
         { name: 'color-scheme', content: 'light dark' },
       ],
-      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg?v=2' }],
     },
   },
 

@@ -81,6 +81,12 @@ def create_job(
         if family not in operation.accepts:
             raise ValidationError("This tool cannot process one of these files.")
 
+    if operation.key == "organize":
+        page_count = files[0].page_count
+        if page_count is None:
+            raise ValidationError("The page count for this PDF is not available.")
+        operations.organization_plan(options.get("pages"), page_count)
+
     expires_at = _now() + timedelta(minutes=settings.file_ttl_minutes)
     job = Job(
         operation=operation.key,

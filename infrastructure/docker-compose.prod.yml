@@ -12,20 +12,29 @@
 # POSTGRES_PASSWORD, which means a fresh volume initialises with the well
 # known default password and the stack comes up looking perfectly healthy.
 #
-# First certificate — DNS must already point at this host, and the stack must
-# be up so that nginx can serve the challenge:
+# First certificate — DNS must already point at this host and port 80 must be
+# free. The bootstrap service listens there directly, before nginx starts:
 #
 #   docker compose --env-file .env \
 #     -f infrastructure/docker-compose.yml -f infrastructure/docker-compose.prod.yml \
-#     run --rm certbot certonly --webroot -w /var/www/certbot \
+#     run --rm --service-ports certbot-bootstrap certonly --standalone \
 #         -d pdfflow.bondeth.site --email you@example.com --agree-tos --no-eff-email
-#
-# Add --dry-run first to rehearse against the staging CA. Let's Encrypt rate
-# limits failed real issuances hard, so rehearsing is worth the extra minute.
 
 name: pdfflow
 
 services:
+  # One-shot first-certificate issuer for a fresh host. It listens on port 80
+  # itself, so it can run before nginx has a certificate. Explicitly targeting
+  # a profiled service enables it without adding it to the normal stack.
+  certbot-bootstrap:
+    image: certbot/certbot:v5.7.0
+    profiles: ["bootstrap"]
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - ${LETSENCRYPT_DIR:-./letsencrypt}:/etc/letsencrypt
+    entrypoint: ["certbot"]
+
   nginx:
     ports:
       # Port 80 is already published by the base file via ${HTTP_PORT}.
@@ -46,7 +55,7 @@ services:
       sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'
 
   certbot:
-    image: certbot/certbot:latest
+    image: certbot/certbot:v5.7.0
     volumes:
       - ${LETSENCRYPT_DIR:-./letsencrypt}:/etc/letsencrypt
       - ${ACME_WEBROOT:-./certbot-webroot}:/var/www/certbot

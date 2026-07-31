@@ -18,7 +18,7 @@ import shutil
 import uuid
 from collections.abc import Iterator
 from pathlib import Path
-from typing import BinaryIO, Literal
+from typing import BinaryIO, Literal, cast
 
 from app.core.config import settings
 from app.core.errors import FileTooLargeError, NotFoundError, ValidationError
@@ -110,13 +110,14 @@ def save_stream(
 
 def _iter_chunks(source: BinaryIO | Iterator[bytes]) -> Iterator[bytes]:
     if hasattr(source, "read"):
+        reader = cast(BinaryIO, source)
         while True:
-            chunk = source.read(_CHUNK)  # type: ignore[union-attr]
+            chunk = reader.read(_CHUNK)
             if not chunk:
                 return
             yield chunk
     else:
-        yield from source  # type: ignore[misc]
+        yield from cast(Iterator[bytes], source)
 
 
 def delete(bucket: Bucket, stored_name: str) -> bool:

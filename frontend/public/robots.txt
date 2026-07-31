@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# The API surface and the generated Swagger/ReDoc pages: useful to people,
+# nothing for an index. /workspace is left crawlable on purpose — it carries a
+# noindex tag instead, which keeps it out of results while still letting its
+# links be followed. Disallowing it here would hide that tag from crawlers.
+Disallow: /api/
+Disallow: /docs
+Disallow: /redoc
+Disallow: /openapi.json
+
+Sitemap: https://pdfflow.bondeth.site/sitemap.xml

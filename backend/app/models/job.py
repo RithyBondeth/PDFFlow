@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import JSON, DateTime, Enum, Index, Integer, String, Text, Uuid, func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -11,6 +12,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.time import ensure_utc
 from app.core.time import now as utc_now
 from app.db.base import Base, default_expiry
+
+if TYPE_CHECKING:
+    from app.models.file_record import FileRecord
 
 # JSONB on Postgres; plain JSON elsewhere so the suite can run on SQLite.
 JsonColumn = JSON().with_variant(JSONB(), "postgresql")
@@ -75,7 +79,7 @@ class Job(Base):
     # into the operation handler, so for merge this *is* the page order the
     # user dragged into place. Without it the database is free to return the
     # rows however it likes.
-    files: Mapped[list[FileRecord]] = relationship(  # noqa: F821
+    files: Mapped[list[FileRecord]] = relationship(
         back_populates="job",
         cascade="all, delete-orphan",
         lazy="selectin",

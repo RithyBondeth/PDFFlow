@@ -74,6 +74,17 @@ describe('api reference data', () => {
       'expired',
     ])
   })
+
+  it('documents the Organize Pages output-plan payload', () => {
+    const createJob = ENDPOINTS.find((endpoint) => endpoint.id === 'post-jobs-create')
+    const example = createJob?.samples.find((sample) => sample.label === 'Organize pages')
+
+    expect(example?.code).toContain('"operation": "organize"')
+    expect(example?.code).toContain('"source": 3')
+    expect(example?.code).toContain('"rotation": 90')
+    expect(createJob?.body?.fields.find((field) => field.name === 'options')?.description)
+      .toContain('1-based `source`')
+  })
 })
 
 describe('topmostVisible', () => {
