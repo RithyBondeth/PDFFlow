@@ -3,6 +3,15 @@ const api = useApi()
 const workspace = useWorkspaceStore()
 const job = useJobStream()
 
+// noindex, not Disallow. The store is in-memory, so a crawler arriving here
+// gets an empty shell that would compete with the landing page for the same
+// terms. `follow` still lets link equity pass back out through the nav.
+useSeo({
+  title: 'Workspace — PDFFlow',
+  description: 'Choose a tool and run it against the files you just uploaded.',
+  noindex: true,
+})
+
 // The store is in-memory by design, so a hard reload has nothing to show.
 onMounted(() => {
   if (!workspace.hasFiles) navigateTo('/')

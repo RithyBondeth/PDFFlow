@@ -4,6 +4,51 @@ import type { Operation } from '~/types/api'
 const api = useApi()
 const workspace = useWorkspaceStore()
 
+const config = useRuntimeConfig()
+const siteUrl = String(config.public.siteUrl).replace(/\/$/, '')
+
+useSeo({
+  title: 'PDFFlow — Fast, Private PDF Tools. No Signup Required.',
+  description:
+    'Merge, split, compress, rotate and extract pages from PDFs in seconds. No account, no tracking, and every file is deleted automatically within 30 minutes.',
+})
+
+// Search engines render tool sites from structured data as often as from the
+// copy. WebApplication is the accurate type — it runs in the browser, it is
+// free, and it needs no account, all of which are things worth stating in a
+// form a crawler can read directly.
+useHead({
+  script: [
+    {
+      type: 'application/ld+json',
+      innerHTML: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: 'PDFFlow',
+        url: `${siteUrl}/`,
+        description:
+          'Fast, private PDF tools. Merge, split, compress, rotate and extract pages with no account and no permanent storage.',
+        applicationCategory: 'UtilitiesApplication',
+        operatingSystem: 'Any',
+        browserRequirements: 'Requires JavaScript',
+        isAccessibleForFree: true,
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        featureList: [
+          'Merge PDF',
+          'Split PDF',
+          'Extract pages',
+          'Rotate PDF',
+          'Compress PDF',
+        ],
+      }),
+    },
+  ],
+})
+
 const uploading = ref(false)
 const uploadProgress = ref(0)
 const error = ref<string | null>(null)

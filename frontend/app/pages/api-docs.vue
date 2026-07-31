@@ -12,15 +12,10 @@ import {
   SSE_EVENTS,
 } from '~/utils/apiReference'
 
-useHead({
+useSeo({
   title: 'PDFFlow API — reference for the no-signup PDF API',
-  meta: [
-    {
-      name: 'description',
-      content:
-        'Upload, queue a job, follow it over SSE and download the result. No keys, no accounts, nothing stored.',
-    },
-  ],
+  description:
+    'Upload, queue a job, follow it over SSE and download the result. No keys, no accounts, nothing stored.',
 })
 
 const overviewSections = [

@@ -20,6 +20,11 @@ export default defineNuxtConfig({
       // Behind nginx the API is same-origin, so a relative base is correct in
       // production. `nuxt dev` overrides it via NUXT_PUBLIC_API_BASE.
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://localhost:8000/api',
+
+      // Canonical, Open Graph and sitemap URLs have to be absolute, and the
+      // app cannot infer its own public origin from behind a proxy. Set
+      // NUXT_PUBLIC_SITE_URL per environment; the default is production.
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'https://pdfflow.bondeth.site',
     },
   },
 
