@@ -69,4 +69,4 @@ jobs:
           -f infrastructure/docker-compose.yml
           -f infrastructure/docker-compose.prod.yml
           run --rm --no-deps worker
-          python tests/container_office_smoke.py
+          python -m tests.container_office_smoke
