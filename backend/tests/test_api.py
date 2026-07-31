@@ -268,3 +268,58 @@ def test_merge_of_two_uploads(client, pdf_bytes):
     job = client.get(f"/api/jobs/{created.json()['id']}").json()
     assert job["status"] == "completed"
     assert job["outputFilename"] == "merged.pdf"
+
+
+def _one_page_pdf(width: int) -> bytes:
+    """A single-page PDF whose page width identifies it in a merged result."""
+    from io import BytesIO
+
+    from pypdf import PdfWriter
+
+    writer = PdfWriter()
+    writer.add_blank_page(width=width, height=842)
+    buffer = BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+def test_merge_follows_the_requested_file_order(client):
+    """The order the user drags files into is the order they are combined in.
+
+    The job is created with the ids deliberately *not* in upload order, because
+    that is the case that used to break: the worker reads its inputs back
+    through `Job.files`, and without an explicit ordering the database returns
+    them however it likes — which happens to be upload order, silently
+    discarding the reordering the user did.
+    """
+    from io import BytesIO
+
+    from pypdf import PdfReader
+
+    widths = {"a.pdf": 300, "b.pdf": 400, "c.pdf": 500}
+    body = client.post(
+        "/api/upload",
+        files=[
+            ("files", (name, _one_page_pdf(width), "application/pdf"))
+            for name, width in widths.items()
+        ],
+    ).json()
+
+    by_name = {file["originalName"]: file["id"] for file in body["files"]}
+    requested = ["c.pdf", "b.pdf", "a.pdf"]  # reverse of the upload order
+
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "merge",
+            "fileIds": [by_name[name] for name in requested],
+            "options": {},
+        },
+    )
+    job_id = created.json()["id"]
+    assert client.get(f"/api/jobs/{job_id}").json()["status"] == "completed"
+
+    merged = PdfReader(BytesIO(client.get(f"/api/download/{job_id}").content))
+    assert [round(float(page.mediabox.width)) for page in merged.pages] == [
+        widths[name] for name in requested
+    ]

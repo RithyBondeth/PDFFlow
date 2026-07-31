@@ -52,13 +52,10 @@ CATALOG: tuple[Operation, ...] = (
         multi_file=True,
         min_files=2,
         implemented=True,
-        options_schema={
-            "order": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "File ids in output order.",
-            }
-        },
+        # No options: the output order is the order `fileIds` arrives in on
+        # /jobs/create, not a separate parameter. An `order` option here would
+        # be a second, contradictable source of truth for the same thing.
+        options_schema={},
     ),
     Operation(
         key="split",

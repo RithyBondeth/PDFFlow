@@ -94,8 +94,12 @@ def create_job(
     db.add(job)
     db.flush()
 
-    for record in files:
+    for index, record in enumerate(files):
         record.job_id = job.id
+        # `files` is already in the caller's order (load_files preserves it).
+        # Pinning it here is what makes merge honour the order the user chose,
+        # since the worker reads the files back through Job.files.
+        record.position = index
         # Inputs live at least as long as the job they belong to.
         record.expires_at = expires_at
 

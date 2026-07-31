@@ -71,8 +71,15 @@ class Job(Base):
         DateTime(timezone=True), nullable=False, default=default_expiry
     )
 
+    # order_by is load-bearing, not cosmetic: the worker feeds `files` straight
+    # into the operation handler, so for merge this *is* the page order the
+    # user dragged into place. Without it the database is free to return the
+    # rows however it likes.
     files: Mapped[list[FileRecord]] = relationship(  # noqa: F821
-        back_populates="job", cascade="all, delete-orphan", lazy="selectin"
+        back_populates="job",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="FileRecord.position",
     )
 
     __table_args__ = (Index("ix_jobs_expires_at_status", "expires_at", "status"),)

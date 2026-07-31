@@ -40,6 +40,12 @@ class FileRecord(Base):
     original_name: Mapped[str] = mapped_column(String(255), nullable=False)
     stored_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     size: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Where this file sits in its job's input order — set from the order the
+    # client sent the ids in. Tools that combine documents (merge) depend on
+    # it, so it has to be persisted rather than inferred from row order.
+    position: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
     mime_type: Mapped[str] = mapped_column(String(128), nullable=False)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
