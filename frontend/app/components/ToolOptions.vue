@@ -8,7 +8,12 @@ import { createPagePlan } from '~/utils/pageOrganizer'
  * schema: each tool has a handful of options and a hand-written control reads
  * far better than a generic schema renderer.
  */
-const props = defineProps<{ operation: Operation; pageCount?: number | null }>()
+const props = defineProps<{
+  operation: Operation
+  pageCount?: number | null
+  /** The browser's copy of the upload, for local page previews. */
+  file?: File | null
+}>()
 const options = defineModel<Record<string, unknown>>({ required: true })
 
 function set(key: string, value: unknown) {
@@ -229,6 +234,7 @@ const COMPRESSION_LEVELS = [
     <PageOrganizer
       v-else-if="operation.key === 'organize'"
       :model-value="(options.pages as OrganizedPage[]) ?? []"
+      :file="file"
       @update:model-value="set('pages', $event)"
     />
 

@@ -9,6 +9,7 @@ const AUTO_IMPORTED = [
   'ref',
   'computed',
   'reactive',
+  'shallowRef',
   'watch',
   'watchEffect',
   'onScopeDispose',

@@ -187,6 +187,7 @@ const rendered = computed(() => {
             v-model="workspace.options"
             :operation="workspace.selectedOperation"
             :page-count="workspace.files[0]?.pageCount"
+            :file="workspace.localFile(workspace.files[0]?.id)"
           />
 
           <!-- Only a runnable action wears the accent. Until a tool is picked

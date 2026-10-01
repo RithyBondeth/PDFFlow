@@ -118,4 +118,35 @@ describe('workspace store', () => {
     expect(store.jobId).toBeNull()
     expect(store.operations).toEqual([])
   })
+
+  it('pairs each upload with the browser file it came from', () => {
+    const store = useWorkspaceStore()
+    const first = new File(['%PDF-'], 'a.pdf')
+    const second = new File(['%PDF-'], 'b.pdf')
+    store.setUpload([file('a', 'a.pdf'), file('b', 'b.pdf')], [merge], [first, second])
+
+    expect(store.localFile('a')).toBe(first)
+    expect(store.localFile('b')).toBe(second)
+    expect(store.localFile(undefined)).toBeNull()
+  })
+
+  it('pairs nothing when the counts disagree rather than guessing', () => {
+    const store = useWorkspaceStore()
+    store.setUpload([file('a', 'a.pdf'), file('b', 'b.pdf')], [merge], [new File([''], 'a.pdf')])
+
+    expect(store.localFile('a')).toBeNull()
+  })
+
+  it('forgets local files when they are removed or the session resets', () => {
+    const store = useWorkspaceStore()
+    const local = [new File([''], 'a.pdf'), new File([''], 'b.pdf')]
+    store.setUpload([file('a', 'a.pdf'), file('b', 'b.pdf')], [merge], local)
+
+    store.removeFile('a')
+    expect(store.localFile('a')).toBeNull()
+    expect(store.localFile('b')).toBe(local[1])
+
+    store.reset()
+    expect(store.localFile('b')).toBeNull()
+  })
 })
