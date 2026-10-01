@@ -524,3 +524,202 @@ def test_unlock_drops_the_protected_suffix_it_added(
         make_context(tmp_path, [locked], password=USER_PASSWORD)
     )
     assert result.filename == "Contract-unlocked.pdf"
+
+
+# --- watermark ----------------------------------------------------------
+
+
+def _ink(page) -> dict | None:
+    """Where red watermark ink landed on the page *as viewed*.
+
+    Returns its centre, whether it runs level or diagonally, and which end is
+    heavier, which tells upright text from upside-down or mirrored text.
+    """
+    import fitz
+    from PIL import Image
+
+    pix = page.get_pixmap(dpi=36)
+    image = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+    pixels = image.load()
+    points = [
+        (x, y)
+        for y in range(pix.height)
+        for x in range(pix.width)
+        if pixels[x, y][0] - pixels[x, y][1] > 40
+    ]
+    del fitz
+    if not points:
+        return None
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    box_x, box_y = (max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2
+    mean_x, mean_y = sum(xs) / len(xs), sum(ys) / len(ys)
+    width, height = max(xs) - min(xs), max(ys) - min(ys)
+    return {
+        "centre": (box_x / pix.width, box_y / pix.height),
+        "shape": "level" if width > 2 * height else "diagonal",
+        "heavy_left": mean_x < box_x - 1,
+        "heavy_low": mean_y > box_y + 1,
+    }
+
+
+def _source_pdf(tmp_path: Path, rotations: list[int], crop: bool = False) -> Path:
+    import fitz
+
+    doc = fitz.open()
+    for rotation in rotations:
+        page = doc.new_page(width=595, height=842)
+        if crop:
+            page.set_cropbox(fitz.Rect(20, 30, 575, 822))
+        page.set_rotation(rotation)
+    path = tmp_path / "source.pdf"
+    doc.save(path)
+    return path
+
+
+# "WWWW" then dots: the ink is heaviest where the text starts, so an upright
+# mark is heavy on the left (level) or lower-left (rising diagonal).
+HEAVY_START = "WWWW............"
+
+
+@pytest.mark.parametrize("crop", [False, True])
+@pytest.mark.parametrize("angle", [0, 45])
+def test_watermark_reads_correctly_on_every_page_rotation(
+    tmp_path: Path, angle: int, crop: bool
+) -> None:
+    import fitz
+
+    source = _source_pdf(tmp_path, [0, 90, 180, 270], crop=crop)
+    result = get_handler("watermark")(
+        make_context(
+            tmp_path,
+            [source],
+            text=HEAVY_START,
+            color="red",
+            opacity=1,
+            angle=angle,
+        )
+    )
+
+    with fitz.open(result.path) as doc:
+        for page in doc:
+            ink = _ink(page)
+            assert ink is not None, f"no watermark on a {page.rotation}° page"
+            centre_x, centre_y = ink["centre"]
+            assert abs(centre_x - 0.5) < 0.03, page.rotation
+            assert abs(centre_y - 0.5) < 0.03, page.rotation
+            assert ink["shape"] == ("level" if angle == 0 else "diagonal"), page.rotation
+            assert ink["heavy_left"], f"mirrored or upside down at {page.rotation}°"
+            if angle == 45:
+                assert ink["heavy_low"], f"falling instead of rising at {page.rotation}°"
+    # Every page keeps the rotation it came with.
+    with fitz.open(result.path) as doc:
+        assert [page.rotation for page in doc] == [0, 90, 180, 270]
+
+
+def test_watermark_only_stamps_the_selected_pages(tmp_path: Path) -> None:
+    import fitz
+
+    source = _source_pdf(tmp_path, [0, 0, 0])
+    result = get_handler("watermark")(
+        make_context(tmp_path, [source], text="DRAFT", color="red", pages="2")
+    )
+
+    with fitz.open(result.path) as doc:
+        assert [_ink(page) is not None for page in doc] == [False, True, False]
+    assert result.metadata == {"mode": "text", "stampedPages": 1}
+    assert result.filename == "source-watermarked.pdf"
+
+
+def test_tiled_watermark_covers_the_page_but_embeds_the_mark_once(
+    tmp_path: Path,
+) -> None:
+    import fitz
+
+    source = _source_pdf(tmp_path, [0] * 40)
+    result = get_handler("watermark")(
+        make_context(tmp_path, [source], text="CONFIDENTIAL", layout="tile", color="red")
+    )
+
+    with fitz.open(result.path) as doc:
+        # Many marks spread over the page, not one in the middle.
+        assert len(doc[0].get_text("words")) >= 6
+        ink = _ink(doc[0])
+        assert ink is not None
+        # Shared stamp, unembedded standard font: 40 pages stay small.
+    assert result.path.stat().st_size < 40_000
+
+
+def test_image_watermark_bakes_in_opacity(tmp_path: Path, make_image) -> None:
+    import fitz
+
+    source = _source_pdf(tmp_path, [0, 90])
+    logo = _write(tmp_path, "logo.png", make_image("PNG", (200, 100)))
+
+    result = get_handler("watermark")(
+        make_context(tmp_path, [source, logo], mode="image", opacity=0.5, angle=0)
+    )
+
+    with fitz.open(result.path) as doc:
+        for page in doc:
+            ink = _ink(page)
+            assert ink is not None
+            assert abs(ink["centre"][0] - 0.5) < 0.03
+            # Half-opaque red over white renders pink, not full red.
+            pix = page.get_pixmap(dpi=36)
+            from PIL import Image
+
+            image = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+            r, g, b = image.getpixel((pix.width // 2, pix.height // 2))
+            assert r > 200 and 100 < g < 200, (r, g, b)
+    assert result.metadata["mode"] == "image"
+
+
+@pytest.mark.parametrize(
+    ("options", "message"),
+    [
+        ({"text": ""}, "Enter the watermark text"),
+        ({"text": "x" * 101}, "100 characters"),
+        ({"text": "សួស្តី"}, "cannot draw yet"),
+        ({"text": "Kőszeg"}, "cannot draw yet"),
+        # Outside Latin-1, so it would render as a stand-in glyph.
+        ({"text": "100 €"}, "cannot draw yet"),
+        ({"text": "OK", "opacity": 0}, "Opacity"),
+        ({"text": "OK", "opacity": True}, "Opacity"),
+        ({"text": "OK", "angle": 30}, "angle"),
+        ({"text": "OK", "color": "pink"}, "color"),
+        ({"text": "OK", "layout": "grid"}, "layout"),
+        ({"mode": "image"}, "Upload an image"),
+    ],
+)
+def test_watermark_validates_its_options(
+    tmp_path: Path, pdf_file: Path, options: dict, message: str
+) -> None:
+    with pytest.raises(ValidationError, match=message):
+        get_handler("watermark")(make_context(tmp_path, [pdf_file], **options))
+
+
+def test_watermark_text_mode_refuses_a_stray_image(
+    tmp_path: Path, pdf_file: Path, png_bytes: bytes
+) -> None:
+    logo = _write(tmp_path, "logo.png", png_bytes)
+    with pytest.raises(ValidationError, match="switch to an image"):
+        get_handler("watermark")(make_context(tmp_path, [pdf_file, logo], text="OK"))
+
+
+def test_watermark_draws_latin_1_text_as_written(
+    tmp_path: Path, pdf_file: Path
+) -> None:
+    result = get_handler("watermark")(
+        make_context(tmp_path, [pdf_file], text="Réservé · Größe 100 £ ©")
+    )
+    # Drawn as written, not with stand-in glyphs.
+    text = PdfReader(str(result.path)).pages[0].extract_text()
+    assert "Réservé · Größe 100 £ ©" in text
+
+
+def test_watermark_tiling_is_bounded_for_tiny_marks() -> None:
+    from app.worker.operations import watermark_ops
+
+    points = watermark_ops._positions(595, 842, 2, 2, "tile")
+    assert 0 < len(points) <= watermark_ops.MAX_TILES

@@ -983,3 +983,76 @@ def test_plain_pdfs_reject_password_misuse(
     assert response.status_code == 422
     assert message in response.json()["error"]["message"]
     assert secret_store.values == {}
+
+
+# --- watermark ---------------------------------------------------------
+
+
+def _offered(client, files) -> set[str]:
+    body = client.post("/api/upload", files=[("files", f) for f in files]).json()
+    return {op["key"] for op in body["availableOperations"]}
+
+
+def test_watermark_is_offered_for_a_pdf_alone_or_with_one_image(
+    client, pdf_bytes, png_bytes
+):
+    pdf = ("doc.pdf", pdf_bytes, "application/pdf")
+    png = ("logo.png", png_bytes, "image/png")
+
+    assert "watermark" in _offered(client, [pdf])
+    with_logo = _offered(client, [pdf, png])
+    assert "watermark" in with_logo
+    ops = {
+        op["key"]: op
+        for op in client.post(
+            "/api/upload", files=[("files", pdf), ("files", png)]
+        ).json()["availableOperations"]
+    }
+    assert ops["watermark"]["ordered"] is False  # each file has its own role
+    assert "images_to_pdf" not in with_logo  # a PDF is not an image
+    assert "watermark" not in _offered(client, [pdf, ("b.pdf", pdf_bytes)])
+    assert "watermark" not in _offered(client, [png])
+    assert "watermark" not in _offered(client, [pdf, png, ("b.png", png_bytes)])
+
+
+def test_watermark_job_rejects_two_pdfs(client, pdf_bytes):
+    ids = [
+        upload(client, f"{name}.pdf", pdf_bytes).json()["files"][0]["id"]
+        for name in ("a", "b")
+    ]
+    response = client.post(
+        "/api/jobs/create",
+        json={"operation": "watermark", "fileIds": ids, "options": {"text": "X"}},
+    )
+    assert response.status_code == 422
+    assert "combination of files" in response.json()["error"]["message"]
+
+
+def test_image_watermark_runs_end_to_end_whatever_the_file_order(
+    client, pdf_bytes, png_bytes
+):
+    from io import BytesIO
+
+    from pypdf import PdfReader
+
+    body = client.post(
+        "/api/upload",
+        files=[
+            ("files", ("logo.png", png_bytes, "image/png")),
+            ("files", ("Report.pdf", pdf_bytes, "application/pdf")),
+        ],
+    ).json()
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "watermark",
+            "fileIds": [file["id"] for file in body["files"]],
+            "options": {"mode": "image", "opacity": 0.4, "layout": "tile"},
+        },
+    )
+    job_id = created.json()["id"]
+    job = client.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "completed", job["errorMessage"]
+    assert job["outputFilename"] == "Report-watermarked.pdf"
+    result = client.get(f"/api/download/{job_id}")
+    assert len(PdfReader(BytesIO(result.content)).pages) == 3

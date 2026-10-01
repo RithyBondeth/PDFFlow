@@ -11,6 +11,7 @@ as coming soon rather than letting a user queue a job that cannot run.
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 
 from app.core.errors import ValidationError
@@ -34,7 +35,25 @@ class Operation:
     # Password-protected PDFs can only go to tools that exist to handle them
     # (Unlock); every other tool needs a document it can read.
     requires_encrypted: bool = False
+    # Optional (min, max) number of files per family, for tools whose inputs
+    # play different roles: Watermark takes one PDF and at most one image.
+    family_limits: dict[str, tuple[int, int]] | None = None
     options_schema: dict = field(default_factory=dict)
+
+    def fits(self, families: list[str]) -> bool:
+        """Whether files of these families, in this number, suit the tool."""
+        if not set(families) <= self.accepts:
+            return False
+        if len(families) < self.min_files:
+            return False
+        if len(families) > 1 and not self.multi_file:
+            return False
+        if self.family_limits is not None:
+            counts = Counter(families)
+            for family, (low, high) in self.family_limits.items():
+                if not low <= counts[family] <= high:
+                    return False
+        return True
 
     def as_dict(self) -> dict:
         return {
@@ -48,6 +67,9 @@ class Operation:
             "outputExtension": self.output_extension,
             "implemented": self.implemented,
             "requiresEncrypted": self.requires_encrypted,
+            # Whether input order shapes the result (merge, images to PDF).
+            # Tools with family limits give each file a role instead.
+            "ordered": self.multi_file and self.family_limits is None,
             "optionsSchema": self.options_schema,
         }
 
@@ -139,6 +161,18 @@ CATALOG: tuple[Operation, ...] = (
         category="edit",
         accepts=frozenset({"pdf", "image"}),
         multi_file=True,
+        implemented=True,
+        family_limits={"pdf": (1, 1), "image": (0, 1)},
+        options_schema={
+            "mode": {"type": "string", "enum": ["text", "image"]},
+            "text": {"type": "string", "maxLength": 100},
+            "color": {"type": "string", "enum": ["gray", "red", "blue", "black"]},
+            "size": {"type": "string", "enum": ["small", "medium", "large"]},
+            "opacity": {"type": "number", "minimum": 0.05, "maximum": 1},
+            "angle": {"type": "integer", "enum": [0, 45]},
+            "layout": {"type": "string", "enum": ["center", "tile"]},
+            "pages": {"type": "string", "description": "Blank means every page."},
+        },
     ),
     Operation(
         key="protect",

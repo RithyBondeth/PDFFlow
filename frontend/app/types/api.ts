@@ -31,6 +31,8 @@ export interface Operation {
   implemented: boolean
   /** True for tools that only take password-protected PDFs (Unlock). */
   requiresEncrypted?: boolean
+  /** Whether the order of the input files changes the result. */
+  ordered?: boolean
   optionsSchema: Record<string, unknown>
 }
 

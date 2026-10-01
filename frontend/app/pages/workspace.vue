@@ -42,6 +42,13 @@ const toolOptionsValid = computed(() => {
   return Array.isArray(workspace.options.pages) && workspace.options.pages.length > 0
 })
 
+// Merge and Images to PDF combine files in order. Watermark also takes
+// several files, but each has its own role, so there is nothing to order.
+const orderMatters = computed(() => {
+  const operation = workspace.selectedOperation
+  return operation?.ordered ?? operation?.multiFile ?? false
+})
+
 const canSubmit = computed(
   () =>
     workspace.selectedOperation !== null &&
@@ -160,12 +167,12 @@ const rendered = computed(() => {
 
         <FileList
           :files="workspace.files"
-          :reorderable="workspace.selectedOperation?.multiFile ?? false"
+          :reorderable="orderMatters"
           @remove="workspace.removeFile"
           @reorder="workspace.reorder"
         />
 
-        <p v-if="workspace.selectedOperation?.multiFile" class="text-xs text-ink-faint">
+        <p v-if="orderMatters" class="text-xs text-ink-faint">
           Drag to set the order the files are combined in.
         </p>
       </aside>
@@ -199,6 +206,7 @@ const rendered = computed(() => {
             :operation="workspace.selectedOperation"
             :page-count="workspace.files[0]?.pageCount"
             :file="workspace.localFile(workspace.files[0]?.id)"
+            :local-files="workspace.files.map((f) => ({ family: f.family, file: workspace.localFile(f.id) }))"
           />
 
           <!-- Only a runnable action wears the accent. Until a tool is picked

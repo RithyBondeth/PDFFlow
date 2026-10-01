@@ -97,14 +97,12 @@ async def upload(
     for record in saved:
         db.refresh(record)
 
-    families = {validation.family_of(record.mime_type) for record in saved}
+    families = [validation.family_of(record.mime_type) for record in saved]
     # Only offer tools that can actually run on this many files of this kind.
     available = [
         op.as_dict()
         for op in operations.CATALOG
-        if families <= op.accepts
-        and len(saved) >= op.min_files
-        and (len(saved) == 1 or op.multi_file)
+        if op.fits(families)
         and all(record.encrypted == op.requires_encrypted for record in saved)
         and (
             op.key != "organize"
