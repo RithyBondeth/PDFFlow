@@ -18,7 +18,9 @@ from sqlalchemy.pool import StaticPool
 
 
 @pytest.fixture
-def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_storage):
+def client(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, isolated_storage, secret_store
+):
     from app.db import session as db_session
     from app.models import Base
 
@@ -784,3 +786,200 @@ def test_pdf_to_images_job_downloads_a_zip_of_pages(client, pdf_bytes):
             "Report-page-2.jpg",
             "Report-page-3.jpg",
         ]
+
+
+# --- protect / unlock --------------------------------------------------
+
+USER_PASSWORD = "open sesame ✓"
+
+
+def _stored_job_options(job_id: str) -> dict:
+    from app.db import session as db_session
+    from app.models.job import Job
+
+    with db_session.SessionLocal() as db:
+        job = db.get(Job, uuid.UUID(job_id))
+        assert job is not None
+        return dict(job.options)
+
+
+def _upload_locked(client, encrypted_pdf_bytes) -> dict:
+    response = upload(client, "Locked.pdf", encrypted_pdf_bytes)
+    assert response.status_code == 200
+    return response.json()
+
+
+def test_encrypted_upload_is_accepted_and_offered_only_unlock(
+    client, encrypted_pdf_bytes
+):
+    body = _upload_locked(client, encrypted_pdf_bytes)
+
+    assert body["files"][0]["encrypted"] is True
+    assert body["files"][0]["pageCount"] is None
+    assert [op["key"] for op in body["availableOperations"]] == ["unlock"]
+
+
+def test_plain_pdf_is_not_offered_unlock(client, pdf_bytes):
+    body = upload(client, "doc.pdf", pdf_bytes).json()
+    keys = {op["key"] for op in body["availableOperations"]}
+    assert body["files"][0]["encrypted"] is False
+    assert "protect" in keys and "unlock" not in keys
+
+
+def test_unlock_runs_without_the_password_ever_being_stored(
+    client, encrypted_pdf_bytes, secret_store, caplog
+):
+    from io import BytesIO
+
+    from pypdf import PdfReader
+
+    caplog.set_level("DEBUG")
+    file_id = _upload_locked(client, encrypted_pdf_bytes)["files"][0]["id"]
+
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "unlock",
+            "fileIds": [file_id],
+            "options": {"password": USER_PASSWORD},
+        },
+    )
+    assert created.status_code == 201
+    job_id = created.json()["id"]
+    job = client.get(f"/api/jobs/{job_id}")
+    assert job.json()["status"] == "completed"
+
+    result = client.get(f"/api/download/{job_id}")
+    assert not PdfReader(BytesIO(result.content)).is_encrypted
+
+    # Not in Postgres, not left in Redis, not in any response or log line.
+    assert "password" not in _stored_job_options(job_id)
+    assert USER_PASSWORD not in str(_stored_job_options(job_id))
+    assert secret_store.values == {}
+    assert USER_PASSWORD not in created.text + job.text
+    assert USER_PASSWORD not in caplog.text
+
+
+def test_the_hand_off_expires_with_the_job(
+    client, encrypted_pdf_bytes, secret_store, monkeypatch
+):
+    from app.api.routes import jobs as jobs_route
+
+    monkeypatch.setattr(jobs_route.celery_app, "send_task", lambda *a, **k: None)
+    file_id = _upload_locked(client, encrypted_pdf_bytes)["files"][0]["id"]
+    client.post(
+        "/api/jobs/create",
+        json={"operation": "unlock", "fileIds": [file_id], "options": {"password": "pw"}},
+    )
+
+    assert list(secret_store.ttls.values()) == [30 * 60]
+
+
+def test_unlock_with_a_wrong_password_fails_the_job_cleanly(
+    client, encrypted_pdf_bytes, secret_store
+):
+    file_id = _upload_locked(client, encrypted_pdf_bytes)["files"][0]["id"]
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "unlock",
+            "fileIds": [file_id],
+            "options": {"password": "nope"},
+        },
+    )
+
+    job = client.get(f"/api/jobs/{created.json()['id']}").json()
+    assert job["status"] == "failed"
+    assert job["errorMessage"] == "That password is not correct."
+    assert secret_store.values == {}
+
+
+def test_a_job_whose_password_is_gone_fails_and_asks_again(
+    client, encrypted_pdf_bytes, secret_store, monkeypatch
+):
+    from app.api.routes import jobs as jobs_route
+    from app.worker import tasks
+
+    monkeypatch.setattr(jobs_route.celery_app, "send_task", lambda *a, **k: None)
+    file_id = _upload_locked(client, encrypted_pdf_bytes)["files"][0]["id"]
+    job_id = client.post(
+        "/api/jobs/create",
+        json={"operation": "unlock", "fileIds": [file_id], "options": {"password": "pw"}},
+    ).json()["id"]
+
+    secret_store.values.clear()  # the TTL ran out before a worker got to it
+    tasks.process_job.run(job_id)
+
+    job = client.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "failed"
+    assert "no longer available" in job["errorMessage"]
+
+
+def test_protect_job_returns_an_encrypted_pdf(client, pdf_bytes, secret_store, caplog):
+    from io import BytesIO
+
+    from pypdf import PdfReader
+
+    caplog.set_level("DEBUG")
+    file_id = upload(client, "Contract.pdf", pdf_bytes).json()["files"][0]["id"]
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "protect",
+            "fileIds": [file_id],
+            "options": {"password": "s3cret-Pass", "allowPrinting": False},
+        },
+    )
+    job_id = created.json()["id"]
+    job = client.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "completed"
+    assert job["outputFilename"] == "Contract-protected.pdf"
+
+    reader = PdfReader(BytesIO(client.get(f"/api/download/{job_id}").content))
+    assert reader.is_encrypted and reader.decrypt("s3cret-Pass")
+
+    stored = _stored_job_options(job_id)
+    assert stored["allowPrinting"] is False
+    assert "s3cret-Pass" not in str(stored)
+    assert "s3cret-Pass" not in caplog.text
+    assert secret_store.values == {}
+
+
+@pytest.mark.parametrize(
+    ("operation", "options", "message"),
+    [
+        ("compress", {"level": "medium"}, "password protected"),
+        ("unlock", {"password": ""}, "Enter a password"),
+    ],
+)
+def test_encrypted_pdfs_only_go_to_unlock_with_a_password(
+    client, encrypted_pdf_bytes, secret_store, operation, options, message
+):
+    file_id = _upload_locked(client, encrypted_pdf_bytes)["files"][0]["id"]
+    response = client.post(
+        "/api/jobs/create",
+        json={"operation": operation, "fileIds": [file_id], "options": options},
+    )
+    assert response.status_code == 422
+    assert message in response.json()["error"]["message"]
+    assert secret_store.values == {}
+
+
+@pytest.mark.parametrize(
+    ("operation", "options", "message"),
+    [
+        ("unlock", {"password": "pw"}, "not password protected"),
+        ("compress", {"level": "medium", "password": "pw"}, "does not take a password"),
+    ],
+)
+def test_plain_pdfs_reject_password_misuse(
+    client, pdf_bytes, secret_store, operation, options, message
+):
+    file_id = upload(client, "doc.pdf", pdf_bytes).json()["files"][0]["id"]
+    response = client.post(
+        "/api/jobs/create",
+        json={"operation": operation, "fileIds": [file_id], "options": options},
+    )
+    assert response.status_code == 422
+    assert message in response.json()["error"]["message"]
+    assert secret_store.values == {}

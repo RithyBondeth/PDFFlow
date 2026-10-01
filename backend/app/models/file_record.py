@@ -12,6 +12,7 @@ from sqlalchemy import (
     Integer,
     String,
     Uuid,
+    false,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -52,6 +53,10 @@ class FileRecord(Base):
     )
     mime_type: Mapped[str] = mapped_column(String(128), nullable=False)
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # A password-protected PDF can be uploaded, but only Unlock may use it.
+    encrypted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
     deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     created_at: Mapped[datetime] = mapped_column(

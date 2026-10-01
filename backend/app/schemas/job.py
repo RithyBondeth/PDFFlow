@@ -26,6 +26,7 @@ class FileOut(ApiModel):
     mime_type: str
     family: str
     page_count: int | None = None
+    encrypted: bool = False
     expires_at: datetime
 
 

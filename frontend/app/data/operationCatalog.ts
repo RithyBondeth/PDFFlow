@@ -106,8 +106,12 @@ export const fallbackOperations: Operation[] = [
     multiFile: false,
     minFiles: 1,
     outputExtension: '.pdf',
-    implemented: false,
-    optionsSchema: {},
+    implemented: true,
+    optionsSchema: {
+      password: { type: 'string', minLength: 1 },
+      allowPrinting: { type: 'boolean', default: true },
+      allowCopying: { type: 'boolean', default: true },
+    },
   },
   {
     key: 'unlock',
@@ -118,8 +122,11 @@ export const fallbackOperations: Operation[] = [
     multiFile: false,
     minFiles: 1,
     outputExtension: '.pdf',
-    implemented: false,
-    optionsSchema: {},
+    implemented: true,
+    requiresEncrypted: true,
+    optionsSchema: {
+      password: { type: 'string', minLength: 1 },
+    },
   },
   {
     key: 'extract_images',

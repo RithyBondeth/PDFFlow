@@ -15,6 +15,8 @@ const props = defineProps<{
   file?: File | null
 }>()
 const options = defineModel<Record<string, unknown>>({ required: true })
+/** Whether the current options can be submitted. */
+const valid = defineModel<boolean>('valid', { default: true })
 
 function set(key: string, value: unknown) {
   options.value = { ...options.value, [key]: value }
@@ -30,10 +32,37 @@ watch(
     else if (key === 'organize') options.value = { pages: createPagePlan(pageCount ?? 0) }
     else if (key === 'images_to_pdf') options.value = { pageSize: 'fit', margin: 'none' }
     else if (key === 'pdf_to_images') options.value = { format: 'png', dpi: 150, pages: '' }
+    else if (key === 'protect') options.value = { password: '', allowPrinting: true, allowCopying: true }
+    else if (key === 'unlock') options.value = { password: '' }
     else options.value = {}
   },
   { immediate: true },
 )
+
+// The confirmation lives only here. It is never part of `options`, so it is
+// never sent anywhere.
+const confirmPassword = ref('')
+const showPassword = ref(false)
+const password = computed(() => (options.value.password as string | undefined) ?? '')
+
+// Cleared together with the password (after a run, or on switching tool).
+watch(password, (value) => {
+  if (!value) confirmPassword.value = ''
+})
+
+const passwordMismatch = computed(
+  () =>
+    props.operation.key === 'protect' &&
+    confirmPassword.value.length > 0 &&
+    confirmPassword.value !== password.value,
+)
+
+watchEffect(() => {
+  const key = props.operation.key
+  if (key === 'protect') valid.value = password.value.length > 0 && confirmPassword.value === password.value
+  else if (key === 'unlock') valid.value = password.value.length > 0
+  else valid.value = true
+})
 
 const PAGE_SIZES = [
   { value: 'fit', label: 'Fit image', hint: 'Each page matches its image' },
@@ -228,6 +257,98 @@ const COMPRESSION_LEVELS = [
           @update:model-value="set('pages', $event)"
         />
       </UFormField>
+    </template>
+
+    <!-- Protect -->
+    <template v-else-if="operation.key === 'protect'">
+      <div class="grid gap-4 sm:grid-cols-2">
+        <UFormField label="Password" hint="Needed to open the PDF">
+          <UInput
+            :model-value="password"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="off"
+            class="w-full"
+            @update:model-value="set('password', $event)"
+          >
+            <template #trailing>
+              <UButton
+                color="neutral"
+                variant="link"
+                size="xs"
+                :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+                :aria-label="showPassword ? 'Hide password' : 'Show password'"
+                @click="showPassword = !showPassword"
+              />
+            </template>
+          </UInput>
+        </UFormField>
+        <UFormField
+          label="Confirm password"
+          :error="passwordMismatch ? 'The passwords do not match' : undefined"
+        >
+          <UInput
+            v-model="confirmPassword"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="off"
+            class="w-full"
+          />
+        </UFormField>
+      </div>
+
+      <UFormField
+        label="Permissions"
+        hint="Most PDF readers honour these, but they are not a guarantee"
+      >
+        <div class="flex flex-col gap-2 sm:flex-row sm:gap-6">
+          <UCheckbox
+            :model-value="options.allowPrinting as boolean"
+            label="Allow printing"
+            @update:model-value="set('allowPrinting', $event === true)"
+          />
+          <UCheckbox
+            :model-value="options.allowCopying as boolean"
+            label="Allow copying text and images"
+            @update:model-value="set('allowCopying', $event === true)"
+          />
+        </div>
+      </UFormField>
+
+      <p class="flex items-start gap-2 text-xs leading-relaxed text-ink-muted">
+        <UIcon name="i-lucide-key-round" class="mt-0.5 size-3.5 shrink-0 text-accent-ink" />
+        Encrypted with AES-256. PDFFlow never stores your password and cannot
+        recover it, so keep it somewhere safe.
+      </p>
+    </template>
+
+    <!-- Unlock -->
+    <template v-else-if="operation.key === 'unlock'">
+      <UFormField
+        label="Password"
+        hint="The password that opens the PDF, or its owner password"
+      >
+        <UInput
+          :model-value="password"
+          :type="showPassword ? 'text' : 'password'"
+          autocomplete="off"
+          class="w-full sm:max-w-sm"
+          @update:model-value="set('password', $event)"
+        >
+          <template #trailing>
+            <UButton
+              color="neutral"
+              variant="link"
+              size="xs"
+              :icon="showPassword ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+              :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              @click="showPassword = !showPassword"
+            />
+          </template>
+        </UInput>
+      </UFormField>
+      <p class="flex items-start gap-2 text-xs leading-relaxed text-ink-muted">
+        <UIcon name="i-lucide-shield-check" class="mt-0.5 size-3.5 shrink-0 text-accent-ink" />
+        Used once to decrypt your file, then discarded. It is never stored.
+      </p>
     </template>
 
     <!-- Organize pages -->

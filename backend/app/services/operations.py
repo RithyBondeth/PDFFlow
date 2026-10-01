@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from app.core.errors import ValidationError
 
 MAX_ORGANIZED_PAGES = 1000
+# AES-256 PDF passwords are limited to 127 bytes after UTF-8 encoding.
+MAX_PASSWORD_BYTES = 127
 
 
 @dataclass(frozen=True)
@@ -29,6 +31,9 @@ class Operation:
     min_files: int = 1
     output_extension: str = ".pdf"
     implemented: bool = False
+    # Password-protected PDFs can only go to tools that exist to handle them
+    # (Unlock); every other tool needs a document it can read.
+    requires_encrypted: bool = False
     options_schema: dict = field(default_factory=dict)
 
     def as_dict(self) -> dict:
@@ -42,6 +47,7 @@ class Operation:
             "minFiles": self.min_files,
             "outputExtension": self.output_extension,
             "implemented": self.implemented,
+            "requiresEncrypted": self.requires_encrypted,
             "optionsSchema": self.options_schema,
         }
 
@@ -140,6 +146,16 @@ CATALOG: tuple[Operation, ...] = (
         description="Encrypt with a password and restrict printing or copying.",
         category="security",
         accepts=frozenset({"pdf"}),
+        implemented=True,
+        options_schema={
+            "password": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Required to open the PDF. Never stored.",
+            },
+            "allowPrinting": {"type": "boolean", "default": True},
+            "allowCopying": {"type": "boolean", "default": True},
+        },
     ),
     Operation(
         key="unlock",
@@ -147,6 +163,15 @@ CATALOG: tuple[Operation, ...] = (
         description="Remove protection — the correct password is required.",
         category="security",
         accepts=frozenset({"pdf"}),
+        implemented=True,
+        requires_encrypted=True,
+        options_schema={
+            "password": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The document's open or owner password. Never stored.",
+            },
+        },
     ),
     Operation(
         key="extract_images",
@@ -199,6 +224,17 @@ BY_KEY: dict[str, Operation] = {op.key: op for op in CATALOG}
 
 def get(key: str) -> Operation | None:
     return BY_KEY.get(key)
+
+
+def document_password(value: object) -> str:
+    """Validate a password option. Runs at the API edge and in the worker."""
+    if not isinstance(value, str) or not value:
+        raise ValidationError("Enter a password.")
+    if len(value.encode("utf-8")) > MAX_PASSWORD_BYTES:
+        raise ValidationError("That password is too long.")
+    if "\x00" in value:
+        raise ValidationError("That password contains an invalid character.")
+    return value
 
 
 def organization_plan(value: object, page_count: int) -> list[dict[str, int]]:
