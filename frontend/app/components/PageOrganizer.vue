@@ -7,7 +7,9 @@ import {
   rotatePage,
 } from '~/utils/pageOrganizer'
 
+const props = defineProps<{ file?: File | null }>()
 const pages = defineModel<OrganizedPage[]>({ required: true })
+const { thumbnails, request } = usePdfThumbnails(() => props.file ?? null)
 const dragIndex = ref<number | null>(null)
 
 function onDrop(target: number) {
@@ -49,15 +51,12 @@ function onDrop(target: number) {
           <UIcon name="i-lucide-grip-horizontal" class="size-3.5 cursor-grab text-ink-faint" />
         </div>
 
-        <div class="flex aspect-[3/4] items-center justify-center rounded border border-hairline bg-surface">
-          <div
-            class="flex flex-col items-center gap-1 text-ink-muted transition-transform"
-            :style="{ transform: `rotate(${page.rotation}deg)` }"
-          >
-            <UIcon name="i-lucide-file-text" class="size-7" />
-            <span class="font-data text-xs tabular-nums">{{ page.source }}</span>
-          </div>
-        </div>
+        <PageThumbnail
+          :source="page.source"
+          :rotation="page.rotation"
+          :src="thumbnails.get(page.source)"
+          @visible="request"
+        />
 
         <p class="mt-2 truncate text-center text-xs text-ink-muted">
           Source page {{ page.source }}<template v-if="page.rotation"> · {{ page.rotation }}°</template>

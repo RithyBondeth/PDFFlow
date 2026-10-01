@@ -13,6 +13,10 @@ export const useWorkspaceStore = defineStore('workspace', () => {
   const options = ref<Record<string, unknown>>({})
   const jobId = ref<string | null>(null)
   const error = ref<string | null>(null)
+  // The browser's own copy of each upload, keyed by server file id, so pages
+  // can be previewed locally without asking the server for anything. Held as
+  // a plain Map: File objects gain nothing from being made reactive.
+  const localFiles = shallowRef(new Map<string, File>())
 
   const hasFiles = computed(() => files.value.length > 0)
   const totalSize = computed(() =>
@@ -26,8 +30,17 @@ export const useWorkspaceStore = defineStore('workspace', () => {
       : null,
   )
 
-  function setUpload(uploaded: UploadedFile[], available: Operation[]) {
+  /**
+   * `local` is the list that was sent to /upload. The API answers in the same
+   * order, which is what lets each server id be paired with its source File.
+   */
+  function setUpload(uploaded: UploadedFile[], available: Operation[], local: File[] = []) {
     files.value = uploaded
+    localFiles.value = new Map(
+      local.length === uploaded.length
+        ? uploaded.map((file, index) => [file.id, local[index]!] as const)
+        : [],
+    )
     operations.value = available
     selectedOperation.value = null
     options.value = {}
@@ -37,6 +50,11 @@ export const useWorkspaceStore = defineStore('workspace', () => {
 
   function removeFile(id: string) {
     files.value = files.value.filter((file) => file.id !== id)
+    if (localFiles.value.has(id)) {
+      const next = new Map(localFiles.value)
+      next.delete(id)
+      localFiles.value = next
+    }
     if (selectedOperation.value && !selectedOperation.value.multiFile && files.value.length > 1) {
       selectedOperation.value = null
     }
@@ -55,8 +73,13 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     options.value = {}
   }
 
+  function localFile(id: string | undefined): File | null {
+    return (id && localFiles.value.get(id)) || null
+  }
+
   function reset() {
     files.value = []
+    localFiles.value = new Map()
     operations.value = []
     selectedOperation.value = null
     options.value = {}
@@ -75,6 +98,7 @@ export const useWorkspaceStore = defineStore('workspace', () => {
     totalSize,
     expiresAt,
     setUpload,
+    localFile,
     removeFile,
     reorder,
     selectOperation,

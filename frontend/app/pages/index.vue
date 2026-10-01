@@ -91,7 +91,7 @@ async function handleFiles(files: File[]) {
     const result = await api.upload(files, (percent) => {
       uploadProgress.value = percent
     })
-    workspace.setUpload(result.files, result.availableOperations)
+    workspace.setUpload(result.files, result.availableOperations, files)
     await navigateTo('/workspace')
   } catch (err) {
     error.value = (err as Error).message
