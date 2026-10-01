@@ -42,6 +42,13 @@ const toolOptionsValid = computed(() => {
   return Array.isArray(workspace.options.pages) && workspace.options.pages.length > 0
 })
 
+// Merge and Images to PDF combine files in order. Watermark also takes
+// several files, but each has its own role, so there is nothing to order.
+const orderMatters = computed(() => {
+  const operation = workspace.selectedOperation
+  return operation?.ordered ?? operation?.multiFile ?? false
+})
+
 const canSubmit = computed(
   () =>
     workspace.selectedOperation !== null &&
@@ -160,12 +167,12 @@ const rendered = computed(() => {
 
         <FileList
           :files="workspace.files"
-          :reorderable="workspace.selectedOperation?.ordered ?? workspace.selectedOperation?.multiFile ?? false"
+          :reorderable="orderMatters"
           @remove="workspace.removeFile"
           @reorder="workspace.reorder"
         />
 
-        <p v-if="workspace.selectedOperation?.multiFile" class="text-xs text-ink-faint">
+        <p v-if="orderMatters" class="text-xs text-ink-faint">
           Drag to set the order the files are combined in.
         </p>
       </aside>
