@@ -89,6 +89,14 @@ const savings = computed(() => {
     ? (result as { percentSaved: number; originalSize: number; alreadyOptimized: boolean })
     : null
 })
+
+/** PDF to Images: how many pages came out, and whether any had to shrink. */
+const rendered = computed(() => {
+  const result = job.state.result as Record<string, number | boolean>
+  return typeof result.imageCount === 'number'
+    ? (result as { imageCount: number; downscaledPages: number })
+    : null
+})
 </script>
 
 <template>
@@ -231,6 +239,14 @@ const savings = computed(() => {
                   <template v-else-if="savings">
                     · {{ savings.percentSaved }}% smaller than
                     {{ formatBytes(savings.originalSize) }}
+                  </template>
+                  <template v-else-if="rendered">
+                    · {{ rendered.imageCount }} {{ rendered.imageCount === 1 ? 'image' : 'images' }}
+                    <template v-if="rendered.downscaledPages">
+                      · {{ rendered.downscaledPages }} oversized
+                      {{ rendered.downscaledPages === 1 ? 'page was' : 'pages were' }}
+                      rendered at a lower resolution
+                    </template>
                   </template>
                 </p>
               </div>

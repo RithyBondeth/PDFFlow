@@ -267,6 +267,32 @@ curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
     "options": {}
   }'`,
       },
+      {
+        label: 'Images to PDF',
+        language: 'bash',
+        code: `# One page per image, in fileIds order. pageSize: fit | a4 | letter.
+# margin: none | small | large. A4 and Letter follow each image's orientation.
+curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "images_to_pdf",
+    "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77", "c9f0f895-fb98-4b91-9f2e-3a1d8c6b5e44"],
+    "options": { "pageSize": "a4", "margin": "small" }
+  }'`,
+      },
+      {
+        label: 'PDF to Images',
+        language: 'bash',
+        code: `# Returns a ZIP with one image per page. format: png | jpeg | webp.
+# dpi: 72 | 150 | 300. Blank pages means every page.
+curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "pdf_to_images",
+    "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77"],
+    "options": { "format": "png", "dpi": 150, "pages": "1-3" }
+  }'`,
+      },
     ],
   },
   {

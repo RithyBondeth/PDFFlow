@@ -23,10 +23,36 @@ watch(
     else if (key === 'rotate') options.value = { angle: 90, pages: '' }
     else if (key === 'split') options.value = { mode: 'every_page', ranges: '' }
     else if (key === 'organize') options.value = { pages: createPagePlan(pageCount ?? 0) }
+    else if (key === 'images_to_pdf') options.value = { pageSize: 'fit', margin: 'none' }
+    else if (key === 'pdf_to_images') options.value = { format: 'png', dpi: 150, pages: '' }
     else options.value = {}
   },
   { immediate: true },
 )
+
+const PAGE_SIZES = [
+  { value: 'fit', label: 'Fit image', hint: 'Each page matches its image' },
+  { value: 'a4', label: 'A4', hint: '210 × 297 mm' },
+  { value: 'letter', label: 'Letter', hint: '8.5 × 11 in' },
+]
+
+const MARGINS = [
+  { value: 'none', label: 'None' },
+  { value: 'small', label: 'Small' },
+  { value: 'large', label: 'Large' },
+]
+
+const IMAGE_FORMATS = [
+  { value: 'png', label: 'PNG', hint: 'Sharp text, larger files' },
+  { value: 'jpeg', label: 'JPEG', hint: 'Small files, best for photos' },
+  { value: 'webp', label: 'WEBP', hint: 'Smallest, for the web' },
+]
+
+const RESOLUTIONS = [
+  { value: 72, label: '72 DPI', hint: 'Screen preview' },
+  { value: 150, label: '150 DPI', hint: 'Recommended' },
+  { value: 300, label: '300 DPI', hint: 'Print quality' },
+]
 
 const COMPRESSION_LEVELS = [
   { value: 'low', label: 'Low', hint: 'Best quality, smallest saving' },
@@ -119,6 +145,85 @@ const COMPRESSION_LEVELS = [
         @update:model-value="set('pages', $event)"
       />
     </UFormField>
+
+    <!-- Images to PDF -->
+    <template v-else-if="operation.key === 'images_to_pdf'">
+      <UFormField label="Page size">
+        <div class="grid gap-2 sm:grid-cols-3">
+          <button
+            v-for="size in PAGE_SIZES"
+            :key="size.value"
+            type="button"
+            class="rounded-md border p-3 text-left transition-colors duration-200"
+            :class="options.pageSize === size.value
+              ? 'border-accent-500 bg-accent-500/10'
+              : 'border-hairline hover:border-hairline-strong'"
+            @click="set('pageSize', size.value)"
+          >
+            <span class="block font-medium text-ink">{{ size.label }}</span>
+            <span class="mt-0.5 block text-xs leading-snug text-ink-muted">{{ size.hint }}</span>
+          </button>
+        </div>
+      </UFormField>
+      <UFormField label="Margin">
+        <div class="flex gap-2">
+          <UButton
+            v-for="margin in MARGINS"
+            :key="margin.value"
+            :color="options.margin === margin.value ? 'primary' : 'neutral'"
+            :variant="options.margin === margin.value ? 'solid' : 'outline'"
+            @click="set('margin', margin.value)"
+          >
+            {{ margin.label }}
+          </UButton>
+        </div>
+      </UFormField>
+    </template>
+
+    <!-- PDF to images -->
+    <template v-else-if="operation.key === 'pdf_to_images'">
+      <UFormField label="Image format">
+        <div class="grid gap-2 sm:grid-cols-3">
+          <button
+            v-for="format in IMAGE_FORMATS"
+            :key="format.value"
+            type="button"
+            class="rounded-md border p-3 text-left transition-colors duration-200"
+            :class="options.format === format.value
+              ? 'border-accent-500 bg-accent-500/10'
+              : 'border-hairline hover:border-hairline-strong'"
+            @click="set('format', format.value)"
+          >
+            <span class="block font-medium text-ink">{{ format.label }}</span>
+            <span class="mt-0.5 block text-xs leading-snug text-ink-muted">{{ format.hint }}</span>
+          </button>
+        </div>
+      </UFormField>
+      <UFormField label="Resolution">
+        <div class="grid gap-2 sm:grid-cols-3">
+          <button
+            v-for="resolution in RESOLUTIONS"
+            :key="resolution.value"
+            type="button"
+            class="rounded-md border p-3 text-left transition-colors duration-200"
+            :class="options.dpi === resolution.value
+              ? 'border-accent-500 bg-accent-500/10'
+              : 'border-hairline hover:border-hairline-strong'"
+            @click="set('dpi', resolution.value)"
+          >
+            <span class="block font-medium text-ink">{{ resolution.label }}</span>
+            <span class="mt-0.5 block text-xs leading-snug text-ink-muted">{{ resolution.hint }}</span>
+          </button>
+        </div>
+      </UFormField>
+      <UFormField label="Pages" hint="Leave blank to convert every page">
+        <UInput
+          :model-value="(options.pages as string) ?? ''"
+          placeholder="e.g. 1-3,7"
+          @update:model-value="set('pages', $event)"
+        />
+      </UFormField>
+    </template>
 
     <!-- Organize pages -->
     <PageOrganizer

@@ -73,6 +73,8 @@ async def upload(
                     raise ValidationError("This PDF has no pages.")
             elif kind.family == "office":
                 validation.validate_office_document(stored_path, kind.extension)
+            elif kind.family == "image":
+                validation.validate_image(stored_path, kind.extension)
             record = FileRecord(
                 original_name=validation.safe_display_name(upload_file.filename),
                 stored_name=stored_name,

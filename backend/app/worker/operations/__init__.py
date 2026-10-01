@@ -50,6 +50,7 @@ def get_handler(key: str) -> Handler | None:
 
 
 from app.worker.operations import (  # noqa: E402,F401  (populates REGISTRY)
+    image_ops,
     office_ops,
     pdf_ops,
 )

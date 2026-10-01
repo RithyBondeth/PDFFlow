@@ -38,7 +38,7 @@ you wondering where your files went. PDFFlow is built around a simpler promise:
 
 | Private by default | Useful right away | Honest about your data |
 | --- | --- | --- |
-| No accounts, session cookies, analytics, or advertising trackers. | Seven working tools cover common PDF and Office workflows. | Inputs are removed after processing; results expire within 30 minutes. |
+| No accounts, session cookies, analytics, or advertising trackers. | Nine working tools cover common PDF, image and Office workflows. | Inputs are removed after processing; results expire within 30 minutes. |
 
 The interface is responsive, supports light and dark themes, and shows file
 requirements and output formats before you upload anything.
@@ -56,14 +56,14 @@ requirements and output formats before you upload anything.
 | **Organise Pages** | Reorder, rotate, duplicate and remove pages visually | PDF |
 | **Compress PDF** | Choose a compression level and compare file sizes | PDF |
 | **Office to PDF** | Convert DOCX, XLSX and PPTX with LibreOffice | PDF |
+| **Images to PDF** | Turn JPG, PNG and WEBP images into one PDF, fitted or on A4/Letter | PDF |
+| **PDF to Images** | Render pages as PNG, JPEG or WEBP at 72, 150 or 300 DPI | ZIP |
 
 ### On the roadmap
 
 - Watermark and protect PDFs
 - Unlock password-protected PDFs with the correct password
 - Extract embedded images
-- Convert images to PDF
-- Render PDF pages as images
 
 The backend serves the operation catalog to the frontend, so the UI never
 advertises a tool that the worker cannot run.

@@ -706,3 +706,81 @@ def test_events_stream_never_uses_the_blocking_subscriber(client, pdf_bytes, mon
         body = "".join(response.iter_text())
 
     assert "event: job_completed" in body
+
+
+# --- image conversion --------------------------------------------------
+
+
+def test_images_upload_offers_images_to_pdf_and_runs_in_order(
+    client, png_bytes, jpeg_bytes
+):
+    from io import BytesIO
+
+    from pypdf import PdfReader
+
+    uploaded = client.post(
+        "/api/upload",
+        files=[
+            ("files", ("first.png", png_bytes, "image/png")),
+            ("files", ("second.jpg", jpeg_bytes, "image/jpeg")),
+        ],
+    )
+    assert uploaded.status_code == 200
+    body = uploaded.json()
+    assert {file["family"] for file in body["files"]} == {"image"}
+    available = {op["key"]: op for op in body["availableOperations"]}
+    assert available["images_to_pdf"]["implemented"] is True
+
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "images_to_pdf",
+            "fileIds": [file["id"] for file in body["files"]],
+            "options": {"pageSize": "a4", "margin": "small"},
+        },
+    )
+    assert created.status_code == 201
+    job_id = created.json()["id"]
+    assert client.get(f"/api/jobs/{job_id}").json()["status"] == "completed"
+
+    result = client.get(f"/api/download/{job_id}")
+    assert result.headers["content-type"] == "application/pdf"
+    assert len(PdfReader(BytesIO(result.content)).pages) == 2
+
+
+def test_upload_rejects_a_corrupt_image(client, png_bytes):
+    response = client.post(
+        "/api/upload", files={"files": ("broken.png", png_bytes[:40], "image/png")}
+    )
+    assert response.status_code == 415
+    assert response.json()["error"]["code"] == "unsupported_file_type"
+
+
+def test_pdf_to_images_job_downloads_a_zip_of_pages(client, pdf_bytes):
+    import zipfile
+    from io import BytesIO
+
+    body = upload(client, "Report.pdf", pdf_bytes).json()
+    assert "pdf_to_images" in {op["key"] for op in body["availableOperations"]}
+
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "pdf_to_images",
+            "fileIds": [body["files"][0]["id"]],
+            "options": {"format": "jpeg", "dpi": 72},
+        },
+    )
+    job_id = created.json()["id"]
+    job = client.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "completed"
+    assert job["outputFilename"] == "Report-images.zip"
+
+    result = client.get(f"/api/download/{job_id}")
+    assert result.headers["content-type"] == "application/zip"
+    with zipfile.ZipFile(BytesIO(result.content)) as archive:
+        assert archive.namelist() == [
+            "Report-page-1.jpg",
+            "Report-page-2.jpg",
+            "Report-page-3.jpg",
+        ]

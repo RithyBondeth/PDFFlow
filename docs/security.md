@@ -35,6 +35,14 @@ Covered by `tests/test_storage.py` and `tests/test_validation.py`.
 - **Magic bytes decide the type.** The declared `Content-Type` and the
   extension are hints; `sniff()` reads the header and a mismatch is a 415. A
   PNG renamed `.pdf` is rejected.
+- **Images are bounded by pixels, not just bytes.** A small PNG can declare
+  tens of thousands of pixels a side and inflate to gigabytes when decoded.
+  `validate_image()` reads the dimensions from the header — without decoding
+  pixel data — and rejects anything over 100 megapixels, then verifies the
+  file structure and that the real format matches the extension (a PNG
+  renamed `.jpg` shares the image family, so only this step catches it).
+  Rendering PDF pages is bounded too: a page that would exceed 40 megapixels
+  at the requested DPI is rendered at a lower resolution instead.
 - **Size is enforced while streaming.** `save_stream` counts bytes as it
   writes and aborts past the ceiling, deleting the partial file. A lying
   `Content-Length` achieves nothing. Nginx has its own `client_max_body_size`

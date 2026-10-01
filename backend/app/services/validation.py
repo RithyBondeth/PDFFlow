@@ -10,6 +10,8 @@ import zipfile
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 
+from PIL import Image
+
 from app.core.config import settings
 from app.core.errors import UnsupportedFileTypeError
 
@@ -148,6 +150,45 @@ def validate_office_document(path: Path, extension: str) -> None:
         raise UnsupportedFileTypeError(
             "This file's contents do not match its Office document type."
         )
+
+
+# A 100 MB cap does not bound decoded size: a tiny PNG can claim 50,000 x
+# 50,000 pixels and expand to gigabytes once a worker decodes it. 100
+# megapixels comfortably covers phone and DSLR photos and scanned posters.
+MAX_IMAGE_PIXELS = 100_000_000
+
+_IMAGE_FORMATS = {".jpg": "JPEG", ".png": "PNG", ".webp": "WEBP"}
+
+
+def validate_image(path: Path, extension: str) -> None:
+    """Confirm an image upload decodes as the format it claims, within bounds.
+
+    The dimensions come from the header without decoding pixel data, so an
+    oversized image is rejected before anything allocates memory for it.
+    ``verify()`` then walks the file structure to catch truncated or corrupt
+    data at upload time rather than as an opaque worker failure.
+    """
+    expected = _IMAGE_FORMATS.get(extension)
+    if expected is None:
+        raise UnsupportedFileTypeError("Unsupported image type.")
+
+    try:
+        with Image.open(path) as image:
+            if image.format != expected:
+                raise UnsupportedFileTypeError(
+                    "This file's contents do not match its extension."
+                )
+            width, height = image.size
+            if width < 1 or height < 1 or width * height > MAX_IMAGE_PIXELS:
+                raise UnsupportedFileTypeError(
+                    "This image is too large to process. "
+                    "Use one under 100 megapixels."
+                )
+            image.verify()
+    except UnsupportedFileTypeError:
+        raise
+    except (OSError, SyntaxError, ValueError, Image.DecompressionBombError) as exc:
+        raise UnsupportedFileTypeError("This file is not a readable image.") from exc
 
 
 def family_of(mime_type: str) -> str:
