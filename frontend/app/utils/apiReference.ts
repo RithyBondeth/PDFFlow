@@ -86,6 +86,7 @@ export const ENDPOINTS: DocEndpoint[] = [
       { name: 'files[].mimeType', type: 'string', description: 'Resolved from the content, not the extension.' },
       { name: 'files[].family', type: 'string', description: 'One of pdf, image, office.' },
       { name: 'files[].pageCount', type: 'integer', note: 'nullable', description: 'Present for PDFs once counted.' },
+      { name: 'files[].encrypted', type: 'boolean', description: 'True for a password-protected PDF. Only `unlock` accepts one, and its pageCount is null.' },
       { name: 'files[].expiresAt', type: 'timestamp', description: 'When this file is deleted. 30 minutes out by default.' },
       {
         name: 'availableOperations',
@@ -265,6 +266,32 @@ curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
     "operation": "office_to_pdf",
     "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77"],
     "options": {}
+  }'`,
+      },
+      {
+        label: 'Protect PDF',
+        language: 'bash',
+        code: `# AES-256. The password is never stored: it is handed to the worker once
+# and discarded. Turning a permission off sets a random owner password.
+curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "protect",
+    "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77"],
+    "options": { "password": "correct horse", "allowPrinting": true, "allowCopying": false }
+  }'`,
+      },
+      {
+        label: 'Unlock PDF',
+        language: 'bash',
+        code: `# Only for uploads reported with "encrypted": true. Accepts the user or
+# owner password. A wrong one fails the job with "That password is not correct."
+curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
+  -H "Content-Type: application/json" \
+  -d '{
+    "operation": "unlock",
+    "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77"],
+    "options": { "password": "correct horse" }
   }'`,
       },
       {

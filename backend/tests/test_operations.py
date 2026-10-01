@@ -404,3 +404,123 @@ def test_images_to_pdf_trusts_scanner_dpi_but_not_camera_placeholders(
 
     # 300px at 300 DPI is one inch; the 72 DPI placeholder falls back to 96.
     assert _page_sizes(result.path) == [(72.0, 144.0), (72.0, 72.0)]
+
+
+# --- protect / unlock ---------------------------------------------------
+
+USER_PASSWORD = "open sesame ✓"
+OWNER_PASSWORD = "owner-only"
+
+
+def _encrypted(tmp_path: Path, content: bytes) -> Path:
+    return _write(tmp_path, "locked.pdf", content)
+
+
+def test_protect_encrypts_with_aes_256(tmp_path: Path, pdf_file: Path) -> None:
+    from pypdf import PasswordType
+
+    result = get_handler("protect")(
+        make_context(tmp_path, [pdf_file], password="hunter2")
+    )
+
+    reader = PdfReader(str(result.path))
+    assert reader.is_encrypted
+    assert reader._encryption is not None and reader._encryption.V == 5  # AES-256
+    # With no restrictions the one password is also the owner password.
+    assert reader.decrypt("hunter2") == PasswordType.OWNER_PASSWORD
+    assert len(reader.pages) == 3
+    assert result.filename == "sample-protected.pdf"
+    assert "hunter2" not in str(result.metadata)
+
+
+def test_protect_restrictions_use_an_owner_password_nobody_knows(
+    tmp_path: Path, pdf_file: Path
+) -> None:
+    from pypdf import PasswordType
+    from pypdf.constants import UserAccessPermissions
+
+    result = get_handler("protect")(
+        make_context(
+            tmp_path,
+            [pdf_file],
+            password="hunter2",
+            allowPrinting=False,
+            allowCopying=False,
+        )
+    )
+
+    reader = PdfReader(str(result.path))
+    # The user password must not double as the owner password, or the
+    # restrictions would be lifted for anyone who can open the file.
+    assert reader.decrypt("hunter2") == PasswordType.USER_PASSWORD
+    permissions = reader.user_access_permissions
+    assert permissions is not None
+    assert not permissions & UserAccessPermissions.PRINT
+    assert not permissions & UserAccessPermissions.EXTRACT
+    assert permissions & UserAccessPermissions.ASSEMBLE_DOC
+
+
+def test_protect_rejects_an_already_encrypted_pdf(
+    tmp_path: Path, encrypted_pdf_bytes: bytes
+) -> None:
+    with pytest.raises(ValidationError, match="password protected"):
+        locked = _encrypted(tmp_path, encrypted_pdf_bytes)
+        get_handler("protect")(make_context(tmp_path, [locked], password="x"))
+
+
+@pytest.mark.parametrize("password", [USER_PASSWORD, OWNER_PASSWORD])
+def test_unlock_accepts_the_user_or_owner_password(
+    tmp_path: Path, encrypted_pdf_bytes: bytes, password: str
+) -> None:
+    locked = _encrypted(tmp_path, encrypted_pdf_bytes)
+
+    result = get_handler("unlock")(make_context(tmp_path, [locked], password=password))
+
+    reader = PdfReader(str(result.path))
+    assert not reader.is_encrypted
+    assert len(reader.pages) == 3
+    assert result.filename == "locked-unlocked.pdf"
+
+
+def test_unlock_rejects_a_wrong_password_without_echoing_it(
+    tmp_path: Path, encrypted_pdf_bytes: bytes
+) -> None:
+    locked = _encrypted(tmp_path, encrypted_pdf_bytes)
+    with pytest.raises(ValidationError, match="not correct") as raised:
+        get_handler("unlock")(make_context(tmp_path, [locked], password="guess-123"))
+    assert "guess-123" not in raised.value.message
+
+
+def test_unlock_rejects_a_pdf_that_is_not_protected(
+    tmp_path: Path, pdf_file: Path
+) -> None:
+    with pytest.raises(ValidationError, match="not password protected"):
+        get_handler("unlock")(make_context(tmp_path, [pdf_file], password="x"))
+
+
+@pytest.mark.parametrize(
+    ("options", "message"),
+    [
+        ({}, "Enter a password"),
+        ({"password": ""}, "Enter a password"),
+        ({"password": 1234}, "Enter a password"),
+        ({"password": "x" * 128}, "too long"),
+        ({"password": "a\x00b"}, "invalid character"),
+        ({"password": "ok", "allowPrinting": "no"}, "true or false"),
+    ],
+)
+def test_protect_validates_its_options(
+    tmp_path: Path, pdf_file: Path, options: dict, message: str
+) -> None:
+    with pytest.raises(ValidationError, match=message):
+        get_handler("protect")(make_context(tmp_path, [pdf_file], **options))
+
+
+def test_unlock_drops_the_protected_suffix_it_added(
+    tmp_path: Path, encrypted_pdf_bytes: bytes
+) -> None:
+    locked = _write(tmp_path, "Contract-protected.pdf", encrypted_pdf_bytes)
+    result = get_handler("unlock")(
+        make_context(tmp_path, [locked], password=USER_PASSWORD)
+    )
+    assert result.filename == "Contract-unlocked.pdf"

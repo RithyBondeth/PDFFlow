@@ -58,15 +58,16 @@ async def upload(
             stored_names.append(stored_name)
             stored_path = storage.resolve("uploads", stored_name)
             page_count = None
+            encrypted = False
             if kind.family == "pdf":
                 try:
                     with stored_path.open("rb") as pdf:
                         reader = PdfReader(pdf, strict=False)
-                        if reader.is_encrypted:
-                            raise ValidationError(
-                                "This PDF is password protected. Unlock it first."
-                            )
-                        page_count = len(reader.pages)
+                        # Accepted, but its pages cannot be read without the
+                        # password, so it is flagged and routed to Unlock only.
+                        encrypted = reader.is_encrypted
+                        if not encrypted:
+                            page_count = len(reader.pages)
                 except (PdfReadError, OSError) as exc:
                     raise ValidationError("This file is not a readable PDF.") from exc
                 if page_count == 0:
@@ -81,6 +82,7 @@ async def upload(
                 size=size,
                 mime_type=kind.mime_type,
                 page_count=page_count,
+                encrypted=encrypted,
                 expires_at=expires_at,
             )
             db.add(record)
@@ -103,6 +105,7 @@ async def upload(
         if families <= op.accepts
         and len(saved) >= op.min_files
         and (len(saved) == 1 or op.multi_file)
+        and all(record.encrypted == op.requires_encrypted for record in saved)
         and (
             op.key != "organize"
             or all(
@@ -124,6 +127,7 @@ async def upload(
                 mime_type=record.mime_type,
                 family=validation.family_of(record.mime_type),
                 page_count=record.page_count,
+                encrypted=record.encrypted,
                 expires_at=record.expires_at,
             )
             for record in saved

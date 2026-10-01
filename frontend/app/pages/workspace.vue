@@ -32,7 +32,12 @@ const burn = computed(() => {
   return burnPercent(workspace.expiresAt)
 })
 
+// Reported by ToolOptions for checks that need its local state, such as a
+// password matching its confirmation.
+const optionsReportValid = ref(true)
+
 const toolOptionsValid = computed(() => {
+  if (!optionsReportValid.value) return false
   if (workspace.selectedOperation?.key !== 'organize') return true
   return Array.isArray(workspace.options.pages) && workspace.options.pages.length > 0
 })
@@ -61,6 +66,11 @@ async function run() {
     )
     workspace.jobId = created.id
     job.start(created.id)
+    // The server has it for the one use it needs; nothing here should keep it.
+    if ('password' in workspace.options) {
+      const { password: _sent, ...rest } = workspace.options
+      workspace.options = rest
+    }
   } catch (err) {
     workspace.error = (err as Error).message
   } finally {
@@ -185,6 +195,7 @@ const rendered = computed(() => {
           <ToolOptions
             v-if="workspace.selectedOperation"
             v-model="workspace.options"
+            v-model:valid="optionsReportValid"
             :operation="workspace.selectedOperation"
             :page-count="workspace.files[0]?.pageCount"
             :file="workspace.localFile(workspace.files[0]?.id)"

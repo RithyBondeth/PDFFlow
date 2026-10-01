@@ -14,6 +14,8 @@ export interface UploadedFile {
   mimeType: string
   family: FileFamily
   pageCount: number | null
+  /** Password protected: only Unlock can use it, and its pages are unknown. */
+  encrypted?: boolean
   expiresAt: string
 }
 
@@ -27,6 +29,8 @@ export interface Operation {
   minFiles: number
   outputExtension: string
   implemented: boolean
+  /** True for tools that only take password-protected PDFs (Unlock). */
+  requiresEncrypted?: boolean
   optionsSchema: Record<string, unknown>
 }
 

@@ -128,6 +128,42 @@ What would break it: logging full URLs to an aggregator, putting a job id in a
 `Referer`-leaking link, or lengthening the TTL substantially. Treat job ids as
 secrets.
 
+## 6. Document passwords are used once and never kept
+
+Protect and Unlock need the user's password, which is more sensitive than any
+other option. It is handled differently from everything else:
+
+- **Never in Postgres.** `jobs.create_job` splits `password` off the options
+  before the job row is written (`services/job_secrets.py`), so `jobs.options`
+  only ever holds the non-secret choices, such as `allowPrinting`.
+- **Never in the Celery message.** The task carries the job id only.
+- **Handed over once.** The API stores the password in Redis under the job id
+  with a TTL equal to the file TTL. The worker reads it with `GETDEL` as its
+  first action, which deletes it in the same step, before any early return.
+  If no worker ever runs the job, the TTL deletes it.
+- **Never echoed.** Validation errors use the generic envelope, failure
+  messages are fixed strings ("That password is not correct."), and result
+  metadata holds no password. Tests assert it is absent from the database,
+  Redis, responses and captured logs after a job.
+- **Cleared in the browser.** The workspace drops the password from memory
+  as soon as the job is created. The confirmation field is never sent.
+
+Permissions (no printing, no copying) are written with a random owner
+password that nobody is told. Otherwise the user password would also be the
+owner password, which grants every permission and voids the restriction. The
+UI says plainly that PDF permissions are honoured by most readers but are not
+a guarantee.
+
+Encrypted uploads are accepted and flagged (`file_records.encrypted`). The
+flag keeps them away from every tool except Unlock, and keeps Unlock away
+from PDFs that are not protected. Repeated guessing costs a fresh upload and
+job per attempt, both rate limited.
+
+**Redis must not persist to disk.** The bundled Compose Redis runs with
+`--save "" --appendonly no`, so a password exists only in memory, for at most
+the TTL. A managed Redis that snapshots to disk could write one there; disable
+persistence on it, or accept that risk explicitly.
+
 ## Deployment checklist
 
 - [ ] Started with `docker-compose.prod.yml` **and** `--env-file .env`. Without
@@ -145,5 +181,7 @@ secrets.
       `nginx.conf` — if you add a log format, a downstream collector, or an
       access_log directive of your own, re-check that it does not reintroduce
       `$request` or `$request_uri`.
+- [ ] Redis persistence (RDB and AOF) disabled, so job passwords never reach
+      disk. See section 6.
 - [ ] Exactly one `beat` replica.
 - [ ] `/api/health` monitored.

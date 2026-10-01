@@ -18,8 +18,8 @@ from app.core.time import now as utc_now
 from app.db.session import session_scope
 from app.models.file_record import FileRecord
 from app.models.job import Job, JobStatus
+from app.services import job_secrets, storage
 from app.services import jobs as job_service
-from app.services import storage
 from app.worker.celery_app import celery_app
 from app.worker.operations import OperationContext, get_handler
 
@@ -30,6 +30,10 @@ logger = logging.getLogger(__name__)
 def process_job(self, job_id: str) -> dict:
     """Run one job. Every failure path ends with a user-safe message on the job
     row and a JOB_FAILED event, so the browser never hangs on a spinner."""
+    # Taken before anything else so the secret is gone from Redis on every
+    # path below, including the early returns. It lives only in this frame.
+    secret = job_secrets.take(job_id)
+
     with session_scope() as db:
         job = db.get(Job, uuid.UUID(job_id))
         if job is None:
@@ -45,6 +49,15 @@ def process_job(self, job_id: str) -> dict:
         handler = get_handler(job.operation)
         if handler is None:
             job_service.mark_failed(db, job, "This tool is not available.")
+            return {"status": "failed"}
+        if job.operation in {"protect", "unlock"} and not secret:
+            # The hand-off expired or was already used. Asking again is the
+            # only option; the password was never kept anywhere else.
+            job_service.mark_failed(
+                db,
+                job,
+                "The password for this job is no longer available. Please try again.",
+            )
             return {"status": "failed"}
 
         job_service.mark_processing(db, job)
@@ -66,7 +79,7 @@ def process_job(self, job_id: str) -> dict:
                 job_id=str(job.id),
                 inputs=inputs,
                 original_names=names,
-                options=dict(job.options or {}),
+                options={**(job.options or {}), **secret},
                 progress=lambda pct, stage: job_service.update_progress(
                     db, job, pct, stage
                 ),

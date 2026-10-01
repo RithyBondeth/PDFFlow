@@ -16,3 +16,5 @@ slowapi==0.1.9
 pypdf==5.1.0
 PyMuPDF==1.25.1
 pillow==11.0.0
+# pypdf needs it for AES encryption and decryption (Protect / Unlock PDF).
+cryptography==50.0.2

@@ -56,6 +56,9 @@ function onDrop(target: number) {
         <p class="font-data text-[11px] tabular-nums text-ink-faint">
           {{ formatBytes(file.size) }}
           <template v-if="file.pageCount"> · {{ file.pageCount }} pages</template>
+          <span v-if="file.encrypted" class="text-accent-ink">
+            · <UIcon name="i-lucide-lock" class="inline size-3 align-[-1px]" /> password protected
+          </span>
         </p>
       </div>
 

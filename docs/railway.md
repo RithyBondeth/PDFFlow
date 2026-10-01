@@ -17,6 +17,12 @@ Create an empty Railway project, then add **PostgreSQL** and **Redis** from the
 service catalog. Keep their generated credentials; reference variables below
 will wire them to the app without copying secrets.
 
+Redis briefly holds the password for each Protect or Unlock job (read once,
+then deleted; see [security.md](security.md#6-document-passwords-are-used-once-and-never-kept)).
+If your Redis service snapshots to disk, turn persistence off, for example by
+running `CONFIG SET save ""` and `CONFIG SET appendonly no`, or by setting a
+custom start command of `redis-server --save "" --appendonly no`.
+
 ## 2. Add the backend
 
 Add a service from the PDFFlow GitHub repository and use these settings:

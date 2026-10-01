@@ -94,3 +94,47 @@ def png_bytes() -> bytes:
 @pytest.fixture
 def jpeg_bytes() -> bytes:
     return image_bytes("JPEG")
+
+
+USER_PASSWORD = "open sesame ✓"
+OWNER_PASSWORD = "owner-only"
+
+
+@pytest.fixture
+def encrypted_pdf_bytes(pdf_bytes: bytes) -> bytes:
+    """The 3-page sample, AES-256 encrypted with separate user/owner passwords."""
+    from pypdf import PdfReader
+
+    writer = PdfWriter(clone_from=PdfReader(io.BytesIO(pdf_bytes)))
+    writer.encrypt(USER_PASSWORD, OWNER_PASSWORD, algorithm="AES-256")
+    buffer = io.BytesIO()
+    writer.write(buffer)
+    return buffer.getvalue()
+
+
+class FakeSecretStore:
+    """In-memory stand-in for the Redis calls job_secrets makes."""
+
+    def __init__(self) -> None:
+        self.values: dict[str, str] = {}
+        self.ttls: dict[str, int] = {}
+
+    def setex(self, name: str, time: int, value: str) -> None:
+        self.values[name] = value
+        self.ttls[name] = time
+
+    def getdel(self, name: str) -> str | None:
+        return self.values.pop(name, None)
+
+    def delete(self, *names: str) -> None:
+        for name in names:
+            self.values.pop(name, None)
+
+
+@pytest.fixture
+def secret_store(monkeypatch: pytest.MonkeyPatch) -> FakeSecretStore:
+    from app.services import job_secrets
+
+    store = FakeSecretStore()
+    monkeypatch.setattr(job_secrets, "_store", lambda: store)
+    return store

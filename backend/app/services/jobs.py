@@ -14,7 +14,7 @@ from app.core.time import ensure_utc
 from app.core.time import now as utc_now
 from app.models.file_record import FileRecord
 from app.models.job import Job, JobStatus
-from app.services import events, operations, validation
+from app.services import events, job_secrets, operations, validation
 
 
 def _now() -> datetime:
@@ -80,6 +80,18 @@ def create_job(
         family = validation.family_of(record.mime_type)
         if family not in operation.accepts:
             raise ValidationError("This tool cannot process one of these files.")
+        if record.encrypted and not operation.requires_encrypted:
+            raise ValidationError("This PDF is password protected. Unlock it first.")
+        if operation.requires_encrypted and not record.encrypted:
+            raise ValidationError("This PDF is not password protected.")
+
+    # Passwords are validated here so a typo fails fast, then split off: they
+    # go to the worker through job_secrets and never into jobs.options.
+    options, secret = job_secrets.split(options)
+    if operation.key in {"protect", "unlock"}:
+        operations.document_password(secret.get("password"))
+    elif secret:
+        raise ValidationError("This tool does not take a password.")
 
     if operation.key == "organize":
         page_count = files[0].page_count
@@ -99,6 +111,7 @@ def create_job(
     )
     db.add(job)
     db.flush()
+    job_secrets.stash(job.id, secret)
 
     for index, record in enumerate(files):
         record.job_id = job.id
@@ -109,7 +122,11 @@ def create_job(
         # Inputs live at least as long as the job they belong to.
         record.expires_at = expires_at
 
-    db.commit()
+    try:
+        db.commit()
+    except Exception:
+        job_secrets.discard(job.id)
+        raise
     db.refresh(job)
 
     events.publish(job.id, events.JOB_CREATED, {"id": str(job.id), "status": "pending"})
