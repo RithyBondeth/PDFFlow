@@ -310,6 +310,20 @@ curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \\
   }'`,
       },
       {
+        label: 'Extract Images',
+        language: 'bash',
+        code: `# A ZIP with each embedded image once, named by the page it first appears on.
+# format: original (JPEGs byte for byte, others PNG) | png. skipSmall drops
+# images under 32px. A PDF with no images fails with a clear message.
+curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "operation": "extract_images",
+    "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77"],
+    "options": { "format": "original", "skipSmall": true, "pages": "" }
+  }'`,
+      },
+      {
         label: 'Images to PDF',
         language: 'bash',
         code: `# One page per image, in fileIds order. pageSize: fit | a4 | letter.

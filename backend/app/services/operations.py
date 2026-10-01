@@ -214,6 +214,16 @@ CATALOG: tuple[Operation, ...] = (
         category="convert",
         accepts=frozenset({"pdf"}),
         output_extension=".zip",
+        implemented=True,
+        options_schema={
+            "format": {
+                "type": "string",
+                "enum": ["original", "png"],
+                "description": "original keeps JPEGs byte for byte; png converts all.",
+            },
+            "skipSmall": {"type": "boolean", "default": True},
+            "pages": {"type": "string", "description": "Blank means every page."},
+        },
     ),
     Operation(
         key="images_to_pdf",

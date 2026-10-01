@@ -723,3 +723,143 @@ def test_watermark_tiling_is_bounded_for_tiny_marks() -> None:
 
     points = watermark_ops._positions(595, 842, 2, 2, "tile")
     assert 0 < len(points) <= watermark_ops.MAX_TILES
+
+
+# --- extract images -----------------------------------------------------
+
+
+@pytest.fixture
+def illustrated_pdf(tmp_path: Path, make_image) -> tuple[Path, bytes]:
+    """Page 1: a JPEG, a half-transparent PNG and an 8px dot. Page 2: the
+    same JPEG again. Page 3: nothing. Returns the path and the JPEG bytes."""
+    import fitz
+
+    photo = make_image("JPEG", (400, 300))
+    doc = fitz.open()
+    for _ in range(3):
+        doc.new_page()
+    xref = doc[0].insert_image(fitz.Rect(50, 50, 250, 200), stream=photo)
+    doc[1].insert_image(fitz.Rect(50, 50, 250, 200), xref=xref)
+    doc[0].insert_image(
+        fitz.Rect(50, 300, 250, 450), stream=make_image("PNG", (300, 200))
+    )
+    doc[0].insert_image(fitz.Rect(300, 50, 310, 60), stream=make_image("PNG", (8, 8)))
+    path = tmp_path / "brochure.pdf"
+    doc.save(path)
+    return path, photo
+
+
+def _zip(result) -> dict[str, bytes]:
+    with zipfile.ZipFile(result.path) as archive:
+        return {name: archive.read(name) for name in archive.namelist()}
+
+
+def test_extract_images_writes_each_image_once(tmp_path: Path, illustrated_pdf) -> None:
+    source, _ = illustrated_pdf
+    result = get_handler("extract_images")(make_context(tmp_path, [source]))
+
+    files = _zip(result)
+    # The JPEG on pages 1 and 2 is one object; the 8px dot is skipped.
+    assert sorted(files) == ["brochure-page-1-1.jpg", "brochure-page-1-2.png"]
+    assert result.filename == "brochure-images.zip"
+    assert result.metadata == {"imageCount": 2, "skippedSmall": 1, "skippedLarge": 0}
+
+
+def test_extract_images_copies_jpegs_byte_for_byte(
+    tmp_path: Path, illustrated_pdf
+) -> None:
+    source, photo = illustrated_pdf
+    files = _zip(get_handler("extract_images")(make_context(tmp_path, [source])))
+    assert files["brochure-page-1-1.jpg"] == photo
+
+
+def test_extract_images_keeps_transparency(tmp_path: Path, illustrated_pdf) -> None:
+    import io
+
+    from PIL import Image
+
+    source, _ = illustrated_pdf
+    files = _zip(get_handler("extract_images")(make_context(tmp_path, [source])))
+
+    image = Image.open(io.BytesIO(files["brochure-page-1-2.png"]))
+    assert image.size == (300, 200)
+    assert "A" in image.getbands()
+
+
+def test_extract_images_png_mode_converts_everything(
+    tmp_path: Path, illustrated_pdf
+) -> None:
+    source, _ = illustrated_pdf
+    files = _zip(
+        get_handler("extract_images")(make_context(tmp_path, [source], format="png"))
+    )
+    assert all(name.endswith(".png") for name in files)
+    assert all(data.startswith(b"\x89PNG") for data in files.values())
+
+
+def test_extract_images_can_include_tiny_images(tmp_path: Path, illustrated_pdf) -> None:
+    source, _ = illustrated_pdf
+    result = get_handler("extract_images")(
+        make_context(tmp_path, [source], skipSmall=False)
+    )
+    assert len(_zip(result)) == 3
+    assert result.metadata["skippedSmall"] == 0
+
+
+def test_extract_images_honours_the_page_selection(
+    tmp_path: Path, illustrated_pdf
+) -> None:
+    source, _ = illustrated_pdf
+    result = get_handler("extract_images")(make_context(tmp_path, [source], pages="2"))
+    # Page 2 reuses the JPEG; it is still found when page 1 is not selected.
+    assert list(_zip(result)) == ["brochure-page-2-1.jpg"]
+
+
+def test_extract_images_explains_an_empty_result(tmp_path: Path, illustrated_pdf) -> None:
+    source, _ = illustrated_pdf
+    with pytest.raises(ValidationError, match="No embedded images"):
+        get_handler("extract_images")(make_context(tmp_path, [source], pages="3"))
+
+
+def test_extract_images_points_out_skipped_icons(tmp_path: Path, make_image) -> None:
+    import fitz
+
+    doc = fitz.open()
+    doc.new_page()
+    doc[0].insert_image(fitz.Rect(10, 10, 20, 20), stream=make_image("PNG", (8, 8)))
+    source = tmp_path / "icons.pdf"
+    doc.save(source)
+
+    with pytest.raises(ValidationError, match="Skip tiny images"):
+        get_handler("extract_images")(make_context(tmp_path, [source]))
+
+
+@pytest.mark.parametrize("options", [{"format": "gif"}, {"skipSmall": "yes"}])
+def test_extract_images_rejects_unknown_options(
+    tmp_path: Path, pdf_file: Path, options: dict
+) -> None:
+    with pytest.raises(ValidationError):
+        get_handler("extract_images")(make_context(tmp_path, [pdf_file], **options))
+
+
+def test_extract_images_converts_cmyk_to_rgb_png(tmp_path: Path) -> None:
+    import io
+
+    import fitz
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("CMYK", (120, 80), (0, 200, 200, 0)).save(buffer, format="JPEG")
+    doc = fitz.open()
+    doc.new_page()
+    doc[0].insert_image(fitz.Rect(50, 50, 170, 130), stream=buffer.getvalue())
+    source = tmp_path / "print.pdf"
+    doc.save(source)
+
+    files = _zip(
+        get_handler("extract_images")(make_context(tmp_path, [source], format="png"))
+    )
+    image = Image.open(io.BytesIO(files["print-page-1-1.png"]))
+    assert image.mode in ("RGB", "RGBA")
+    red, green, blue = image.convert("RGB").getpixel((60, 40))
+    assert red > 150 and green < 100 and blue < 100  # cyan-free, so it reads red

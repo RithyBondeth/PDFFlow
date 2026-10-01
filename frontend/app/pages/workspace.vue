@@ -107,11 +107,14 @@ const savings = computed(() => {
     : null
 })
 
-/** PDF to Images: how many pages came out, and whether any had to shrink. */
+/**
+ * PDF to Images and Extract Images: how many images came out, and anything
+ * that was left out or shrunk on the way.
+ */
 const rendered = computed(() => {
   const result = job.state.result as Record<string, number | boolean>
   return typeof result.imageCount === 'number'
-    ? (result as { imageCount: number; downscaledPages: number })
+    ? (result as { imageCount: number; downscaledPages?: number; skippedSmall?: number })
     : null
 })
 </script>
@@ -266,6 +269,10 @@ const rendered = computed(() => {
                       · {{ rendered.downscaledPages }} oversized
                       {{ rendered.downscaledPages === 1 ? 'page was' : 'pages were' }}
                       rendered at a lower resolution
+                    </template>
+                    <template v-if="rendered.skippedSmall">
+                      · {{ rendered.skippedSmall }} tiny
+                      {{ rendered.skippedSmall === 1 ? 'image' : 'images' }} skipped
                     </template>
                   </template>
                 </p>

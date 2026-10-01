@@ -219,16 +219,24 @@ const lifecycle = [
           Everything you'd otherwise install software for
         </h2>
         <p class="mt-3 max-w-2xl text-pretty text-ink-muted">
-          Browse all {{ operations.length }} tools below. {{ readyCount }} work today
-          and {{ plannedCount }} are clearly marked as planned, with the accepted file
-          types, number of files and output format shown on every card.
+          Browse all {{ operations.length }} tools below.
+          <template v-if="plannedCount">
+            {{ readyCount }} work today and {{ plannedCount }} are clearly marked as
+            planned, with
+          </template>
+          <template v-else>Every one works today, with</template>
+          the accepted file types, number of files and output format shown on every
+          card.
         </p>
 
         <div class="mt-5 flex flex-wrap gap-2">
           <span class="font-data rounded-full border border-good/30 bg-good/10 px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-good">
             {{ readyCount }} ready now
           </span>
-          <span class="font-data rounded-full border border-hairline px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-ink-faint">
+          <span
+            v-if="plannedCount"
+            class="font-data rounded-full border border-hairline px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-ink-faint"
+          >
             {{ plannedCount }} on the roadmap
           </span>
         </div>

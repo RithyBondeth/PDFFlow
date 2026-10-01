@@ -50,6 +50,7 @@ watch(
     else if (key === 'pdf_to_images') options.value = { format: 'png', dpi: 150, pages: '' }
     else if (key === 'protect') options.value = { password: '', allowPrinting: true, allowCopying: true }
     else if (key === 'unlock') options.value = { password: '' }
+    else if (key === 'extract_images') options.value = { format: 'original', skipSmall: true, pages: '' }
     else if (key === 'watermark') {
       options.value = {
         // An image uploaded with the PDF can only mean an image watermark.
@@ -534,6 +535,44 @@ const COMPRESSION_LEVELS = [
         :layout="(options.layout as WatermarkLayout) ?? 'center'"
       />
     </div>
+
+    <!-- Extract images -->
+    <template v-else-if="operation.key === 'extract_images'">
+      <UFormField label="Format">
+        <div class="grid gap-2 sm:grid-cols-2">
+          <button
+            v-for="format in [
+              { value: 'original', label: 'Original quality', hint: 'JPEGs come out exactly as stored; others as PNG' },
+              { value: 'png', label: 'All PNG', hint: 'One lossless format for everything' },
+            ]"
+            :key="format.value"
+            type="button"
+            class="rounded-md border p-3 text-left transition-colors duration-200"
+            :class="options.format === format.value
+              ? 'border-accent-500 bg-accent-500/10'
+              : 'border-hairline hover:border-hairline-strong'"
+            @click="set('format', format.value)"
+          >
+            <span class="block font-medium text-ink">{{ format.label }}</span>
+            <span class="mt-0.5 block text-xs leading-snug text-ink-muted">{{ format.hint }}</span>
+          </button>
+        </div>
+      </UFormField>
+      <UCheckbox
+        :model-value="options.skipSmall as boolean"
+        label="Skip tiny images"
+        description="Leaves out icons, bullets and rules under 32 pixels"
+        @update:model-value="set('skipSmall', $event === true)"
+      />
+      <UFormField label="Pages" hint="Leave blank to search every page">
+        <UInput
+          :model-value="(options.pages as string) ?? ''"
+          placeholder="e.g. 1-3,7"
+          class="w-full sm:max-w-xs"
+          @update:model-value="set('pages', $event)"
+        />
+      </UFormField>
+    </template>
 
     <!-- Organize pages -->
     <PageOrganizer

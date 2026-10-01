@@ -1056,3 +1056,50 @@ def test_image_watermark_runs_end_to_end_whatever_the_file_order(
     assert job["outputFilename"] == "Report-watermarked.pdf"
     result = client.get(f"/api/download/{job_id}")
     assert len(PdfReader(BytesIO(result.content)).pages) == 3
+
+
+# --- extract images ----------------------------------------------------
+
+
+def test_extract_images_job_downloads_a_zip(client, make_image, tmp_path):
+    import zipfile
+    from io import BytesIO
+
+    import fitz
+
+    doc = fitz.open()
+    doc.new_page()
+    doc[0].insert_image(
+        fitz.Rect(50, 50, 250, 200), stream=make_image("JPEG", (400, 300))
+    )
+    body = upload(client, "Brochure.pdf", doc.tobytes()).json()
+    assert "extract_images" in {op["key"] for op in body["availableOperations"]}
+
+    created = client.post(
+        "/api/jobs/create",
+        json={
+            "operation": "extract_images",
+            "fileIds": [body["files"][0]["id"]],
+            "options": {"format": "original", "skipSmall": True},
+        },
+    )
+    job_id = created.json()["id"]
+    job = client.get(f"/api/jobs/{job_id}").json()
+    assert job["status"] == "completed", job["errorMessage"]
+    assert job["outputFilename"] == "Brochure-images.zip"
+
+    result = client.get(f"/api/download/{job_id}")
+    assert result.headers["content-type"] == "application/zip"
+    with zipfile.ZipFile(BytesIO(result.content)) as archive:
+        assert archive.namelist() == ["Brochure-page-1-1.jpg"]
+
+
+def test_extract_images_on_a_pdf_without_images_fails_clearly(client, pdf_bytes):
+    file_id = upload(client, "plain.pdf", pdf_bytes).json()["files"][0]["id"]
+    created = client.post(
+        "/api/jobs/create",
+        json={"operation": "extract_images", "fileIds": [file_id], "options": {}},
+    )
+    job = client.get(f"/api/jobs/{created.json()['id']}").json()
+    assert job["status"] == "failed"
+    assert job["errorMessage"] == "No embedded images were found in these pages."
