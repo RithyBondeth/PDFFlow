@@ -68,3 +68,29 @@ def docx_bytes() -> bytes:
             "</w:t></w:r></w:p><w:sectPr/></w:body></w:document>",
         )
     return buffer.getvalue()
+
+
+def image_bytes(fmt: str, size: tuple[int, int] = (40, 20), **save) -> bytes:
+    """Encode a solid-colour test image. Kept tiny: these tests check layout
+    and plumbing, not image quality."""
+    from PIL import Image
+
+    mode = "RGBA" if fmt == "PNG" else "RGB"
+    buffer = io.BytesIO()
+    Image.new(mode, size, (200, 40, 40)).save(buffer, format=fmt, **save)
+    return buffer.getvalue()
+
+
+@pytest.fixture
+def make_image():
+    return image_bytes
+
+
+@pytest.fixture
+def png_bytes() -> bytes:
+    return image_bytes("PNG")
+
+
+@pytest.fixture
+def jpeg_bytes() -> bytes:
+    return image_bytes("JPEG")

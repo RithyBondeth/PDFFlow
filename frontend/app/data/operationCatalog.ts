@@ -142,8 +142,11 @@ export const fallbackOperations: Operation[] = [
     multiFile: true,
     minFiles: 1,
     outputExtension: '.pdf',
-    implemented: false,
-    optionsSchema: {},
+    implemented: true,
+    optionsSchema: {
+      pageSize: { type: 'string', enum: ['fit', 'a4', 'letter'] },
+      margin: { type: 'string', enum: ['none', 'small', 'large'] },
+    },
   },
   {
     key: 'pdf_to_images',
@@ -154,8 +157,12 @@ export const fallbackOperations: Operation[] = [
     multiFile: false,
     minFiles: 1,
     outputExtension: '.zip',
-    implemented: false,
-    optionsSchema: {},
+    implemented: true,
+    optionsSchema: {
+      format: { type: 'string', enum: ['png', 'jpeg', 'webp'] },
+      dpi: { type: 'integer', enum: [72, 150, 300] },
+      pages: { type: 'string', description: 'Blank means every page.' },
+    },
   },
   {
     key: 'office_to_pdf',

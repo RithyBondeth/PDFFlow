@@ -163,6 +163,12 @@ CATALOG: tuple[Operation, ...] = (
         category="convert",
         accepts=frozenset({"image"}),
         multi_file=True,
+        implemented=True,
+        # Like merge, page order is the order `fileIds` arrives in.
+        options_schema={
+            "pageSize": {"type": "string", "enum": ["fit", "a4", "letter"]},
+            "margin": {"type": "string", "enum": ["none", "small", "large"]},
+        },
     ),
     Operation(
         key="pdf_to_images",
@@ -171,6 +177,12 @@ CATALOG: tuple[Operation, ...] = (
         category="convert",
         accepts=frozenset({"pdf"}),
         output_extension=".zip",
+        implemented=True,
+        options_schema={
+            "format": {"type": "string", "enum": ["png", "jpeg", "webp"]},
+            "dpi": {"type": "integer", "enum": [72, 150, 300]},
+            "pages": {"type": "string", "description": "Blank means every page."},
+        },
     ),
     Operation(
         key="office_to_pdf",

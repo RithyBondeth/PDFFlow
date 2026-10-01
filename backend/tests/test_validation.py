@@ -82,3 +82,37 @@ def test_safe_display_name(raw: str | None, expected: str) -> None:
 
 def test_safe_display_name_is_bounded() -> None:
     assert len(validation.safe_display_name("a" * 500 + ".pdf")) <= 200
+
+
+# --- images ------------------------------------------------------------
+
+
+def _image(tmp_path: Path, name: str, content: bytes) -> Path:
+    path = tmp_path / name
+    path.write_bytes(content)
+    return path
+
+
+def test_accepts_a_readable_image(tmp_path: Path, png_bytes: bytes) -> None:
+    validation.validate_image(_image(tmp_path, "photo.png", png_bytes), ".png")
+
+
+def test_rejects_a_png_renamed_to_jpg(tmp_path: Path, png_bytes: bytes) -> None:
+    """Both are the image family, so only decoding the header tells them apart."""
+    with pytest.raises(UnsupportedFileTypeError, match="do not match"):
+        validation.validate_image(_image(tmp_path, "photo.jpg", png_bytes), ".jpg")
+
+
+def test_rejects_a_truncated_image(tmp_path: Path, png_bytes: bytes) -> None:
+    path = _image(tmp_path, "photo.png", png_bytes[:40])
+    with pytest.raises(UnsupportedFileTypeError, match="readable image"):
+        validation.validate_image(path, ".png")
+
+
+def test_rejects_an_image_with_too_many_pixels(
+    tmp_path: Path, png_bytes: bytes, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Pixel count, not file size, is what a decompression bomb inflates."""
+    monkeypatch.setattr(validation, "MAX_IMAGE_PIXELS", 40 * 20 - 1)
+    with pytest.raises(UnsupportedFileTypeError, match="too large"):
+        validation.validate_image(_image(tmp_path, "photo.png", png_bytes), ".png")

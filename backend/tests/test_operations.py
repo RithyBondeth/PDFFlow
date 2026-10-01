@@ -239,3 +239,168 @@ def test_office_to_pdf_reports_a_conversion_timeout(
 
     with pytest.raises(ValidationError, match="too long"):
         get_handler("office_to_pdf")(make_context(tmp_path, [source]))
+
+
+# --- images to PDF ------------------------------------------------------
+
+
+def _write(tmp_path: Path, name: str, content: bytes) -> Path:
+    path = tmp_path / name
+    path.write_bytes(content)
+    return path
+
+
+def _page_sizes(path: Path) -> list[tuple[float, float]]:
+    return [
+        (round(float(page.mediabox.width), 1), round(float(page.mediabox.height), 1))
+        for page in PdfReader(str(path)).pages
+    ]
+
+
+def test_images_to_pdf_makes_one_page_per_image_in_order(
+    tmp_path: Path, png_bytes: bytes, make_image
+) -> None:
+    wide = _write(tmp_path, "wide.png", png_bytes)
+    tall = _write(tmp_path, "tall.jpg", make_image("JPEG", (20, 40)))
+
+    result = get_handler("images_to_pdf")(make_context(tmp_path, [wide, tall]))
+
+    # "fit" sizes each page to its image at the 96 DPI default: 40px -> 30pt.
+    assert _page_sizes(result.path) == [(30.0, 15.0), (15.0, 30.0)]
+    assert result.filename == "images.pdf"
+    assert result.metadata["pageCount"] == 2
+
+
+def test_images_to_pdf_names_a_single_image_after_it(
+    tmp_path: Path, jpeg_bytes: bytes
+) -> None:
+    photo = _write(tmp_path, "Holiday photo.jpg", jpeg_bytes)
+    result = get_handler("images_to_pdf")(make_context(tmp_path, [photo]))
+    assert result.filename == "Holiday photo.pdf"
+
+
+def test_images_to_pdf_matches_paper_orientation_to_the_image(
+    tmp_path: Path, png_bytes: bytes
+) -> None:
+    wide = _write(tmp_path, "wide.png", png_bytes)
+    result = get_handler("images_to_pdf")(
+        make_context(tmp_path, [wide], pageSize="a4", margin="large")
+    )
+    assert _page_sizes(result.path) == [(841.9, 595.3)]
+
+
+def test_images_to_pdf_honours_exif_orientation(tmp_path: Path, make_image) -> None:
+    """Phones store pixels sideways and record the rotation in EXIF."""
+    from PIL import Image
+
+    exif = Image.Exif()
+    exif[0x0112] = 6  # rotate 90° clockwise to display
+    sideways = _write(
+        tmp_path, "phone.jpg", make_image("JPEG", (40, 20), exif=exif.tobytes())
+    )
+
+    result = get_handler("images_to_pdf")(make_context(tmp_path, [sideways]))
+
+    assert _page_sizes(result.path) == [(15.0, 30.0)]
+
+
+def test_images_to_pdf_accepts_webp(tmp_path: Path, make_image) -> None:
+    webp = _write(tmp_path, "art.webp", make_image("WEBP"))
+    result = get_handler("images_to_pdf")(make_context(tmp_path, [webp]))
+    assert len(PdfReader(str(result.path)).pages) == 1
+
+
+@pytest.mark.parametrize(
+    "options", [{"pageSize": "tabloid"}, {"margin": "huge"}]
+)
+def test_images_to_pdf_rejects_unknown_options(
+    tmp_path: Path, png_bytes: bytes, options: dict
+) -> None:
+    image = _write(tmp_path, "a.png", png_bytes)
+    with pytest.raises(ValidationError):
+        get_handler("images_to_pdf")(make_context(tmp_path, [image], **options))
+
+
+# --- PDF to images ------------------------------------------------------
+
+
+def test_pdf_to_images_renders_every_page_by_default(
+    tmp_path: Path, pdf_file: Path
+) -> None:
+    result = get_handler("pdf_to_images")(make_context(tmp_path, [pdf_file]))
+
+    with zipfile.ZipFile(result.path) as archive:
+        names = archive.namelist()
+        first = archive.read(names[0])
+    assert names == ["sample-page-1.png", "sample-page-2.png", "sample-page-3.png"]
+    assert first.startswith(b"\x89PNG")
+    assert result.filename == "sample-images.zip"
+    assert result.metadata["imageCount"] == 3
+
+
+@pytest.mark.parametrize(
+    ("image_format", "extension", "signature"),
+    [("jpeg", "jpg", b"\xff\xd8\xff"), ("webp", "webp", b"RIFF")],
+)
+def test_pdf_to_images_encodes_selected_pages(
+    tmp_path: Path, pdf_file: Path, image_format: str, extension: str, signature: bytes
+) -> None:
+    result = get_handler("pdf_to_images")(
+        make_context(tmp_path, [pdf_file], format=image_format, dpi=72, pages="2-3")
+    )
+
+    with zipfile.ZipFile(result.path) as archive:
+        names = archive.namelist()
+        assert all(archive.read(name).startswith(signature) for name in names)
+    assert names == [f"sample-page-2.{extension}", f"sample-page-3.{extension}"]
+
+
+def test_pdf_to_images_uses_the_requested_resolution(
+    tmp_path: Path, pdf_file: Path
+) -> None:
+    from PIL import Image
+
+    result = get_handler("pdf_to_images")(
+        make_context(tmp_path, [pdf_file], dpi=72, pages="1")
+    )
+    with zipfile.ZipFile(result.path) as archive:
+        image = Image.open(archive.open("sample-page-1.png"))
+        assert image.size == (595, 842)
+
+
+def test_pdf_to_images_downscales_oversized_pages(
+    tmp_path: Path, pdf_file: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from PIL import Image
+
+    from app.worker.operations import image_ops
+
+    monkeypatch.setattr(image_ops, "MAX_RENDER_PIXELS", 100_000)
+    result = get_handler("pdf_to_images")(
+        make_context(tmp_path, [pdf_file], dpi=300, pages="1")
+    )
+
+    with zipfile.ZipFile(result.path) as archive:
+        width, height = Image.open(archive.open("sample-page-1.png")).size
+    assert width * height <= 100_000
+    assert result.metadata["downscaledPages"] == 1
+
+
+@pytest.mark.parametrize("options", [{"format": "gif"}, {"dpi": 600}, {"dpi": "150"}])
+def test_pdf_to_images_rejects_unknown_options(
+    tmp_path: Path, pdf_file: Path, options: dict
+) -> None:
+    with pytest.raises(ValidationError):
+        get_handler("pdf_to_images")(make_context(tmp_path, [pdf_file], **options))
+
+
+def test_images_to_pdf_trusts_scanner_dpi_but_not_camera_placeholders(
+    tmp_path: Path, make_image
+) -> None:
+    scan = _write(tmp_path, "scan.png", make_image("PNG", (300, 600), dpi=(300, 300)))
+    photo = _write(tmp_path, "photo.png", make_image("PNG", (96, 96), dpi=(72, 72)))
+
+    result = get_handler("images_to_pdf")(make_context(tmp_path, [scan, photo]))
+
+    # 300px at 300 DPI is one inch; the 72 DPI placeholder falls back to 96.
+    assert _page_sizes(result.path) == [(72.0, 144.0), (72.0, 72.0)]
