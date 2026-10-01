@@ -76,10 +76,9 @@ def create_job(
         )
 
     files = load_files(db, file_ids)
+    if not operation.fits([validation.family_of(r.mime_type) for r in files]):
+        raise ValidationError("This tool cannot process this combination of files.")
     for record in files:
-        family = validation.family_of(record.mime_type)
-        if family not in operation.accepts:
-            raise ValidationError("This tool cannot process one of these files.")
         if record.encrypted and not operation.requires_encrypted:
             raise ValidationError("This PDF is password protected. Unlock it first.")
         if operation.requires_encrypted and not record.encrypted:

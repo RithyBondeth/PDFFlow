@@ -160,7 +160,7 @@ const rendered = computed(() => {
 
         <FileList
           :files="workspace.files"
-          :reorderable="workspace.selectedOperation?.multiFile ?? false"
+          :reorderable="workspace.selectedOperation?.ordered ?? workspace.selectedOperation?.multiFile ?? false"
           @remove="workspace.removeFile"
           @reorder="workspace.reorder"
         />
@@ -199,6 +199,7 @@ const rendered = computed(() => {
             :operation="workspace.selectedOperation"
             :page-count="workspace.files[0]?.pageCount"
             :file="workspace.localFile(workspace.files[0]?.id)"
+            :local-files="workspace.files.map((f) => ({ family: f.family, file: workspace.localFile(f.id) }))"
           />
 
           <!-- Only a runnable action wears the accent. Until a tool is picked

@@ -295,6 +295,21 @@ curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \
   }'`,
       },
       {
+        label: 'Watermark PDF',
+        language: 'bash',
+        code: `# Text: one PDF. Image: upload the PDF with one PNG/JPG/WEBP and send both ids
+# with "mode": "image". angle: 0 | 45. layout: center | tile. opacity: 0.05-1.
+# Text must be Latin-1 (Latin letters, numbers, punctuation).
+curl -s -X POST ${EXAMPLE_HOST}/api/jobs/create \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "operation": "watermark",
+    "fileIds": ["8f14e45f-ea6c-4f2b-b2a1-2c9a6f1d3e77"],
+    "options": { "mode": "text", "text": "CONFIDENTIAL", "color": "red",
+                 "size": "medium", "opacity": 0.3, "angle": 45, "layout": "tile" }
+  }'`,
+      },
+      {
         label: 'Images to PDF',
         language: 'bash',
         code: `# One page per image, in fileIds order. pageSize: fit | a4 | letter.

@@ -17,6 +17,8 @@ const MAX_PIXEL_RATIO = 2
  */
 export function usePdfThumbnails(file: MaybeRefOrGetter<File | null>) {
   const thumbnails = shallowReactive(new Map<number, string>())
+  // Each rendered page's size in points as viewed (its /Rotate applied).
+  const sizes = shallowReactive(new Map<number, { width: number; height: number }>())
   const unavailable = ref(false)
   let queue: ThumbnailQueue | null = null
 
@@ -24,6 +26,7 @@ export function usePdfThumbnails(file: MaybeRefOrGetter<File | null>) {
     queue?.dispose()
     queue = null
     thumbnails.clear()
+    sizes.clear()
     unavailable.value = false
   }
 
@@ -31,7 +34,11 @@ export function usePdfThumbnails(file: MaybeRefOrGetter<File | null>) {
     queue = createThumbnailQueue<PDFDocumentProxy>(
       {
         open: () => openDocument(source),
-        render: renderPage,
+        render: async (doc, page) => {
+          const { url, width, height } = await renderPage(doc, page)
+          sizes.set(page, { width, height })
+          return url
+        },
         close: (doc) => void doc.destroy(),
         revoke: (url) => URL.revokeObjectURL(url),
       },
@@ -53,13 +60,14 @@ export function usePdfThumbnails(file: MaybeRefOrGetter<File | null>) {
 
   return {
     thumbnails,
+    sizes,
     unavailable: readonly(unavailable),
     request: (page: number) => queue?.request(page),
   }
 }
 
 async function openDocument(source: File): Promise<PDFDocumentProxy> {
-  // Loaded on first use: pdf.js is large, and only Organize Pages needs it.
+  // Loaded on first use: pdf.js is large, and only the page tools need it.
   const [pdfjs, { default: workerUrl }] = await Promise.all([
     import('pdfjs-dist'),
     import('pdfjs-dist/build/pdf.worker.min.mjs?url'),
@@ -76,7 +84,10 @@ async function openDocument(source: File): Promise<PDFDocumentProxy> {
   }).promise
 }
 
-async function renderPage(doc: PDFDocumentProxy, pageNumber: number): Promise<string> {
+async function renderPage(
+  doc: PDFDocumentProxy,
+  pageNumber: number,
+): Promise<{ url: string; width: number; height: number }> {
   const page = await doc.getPage(pageNumber)
   try {
     // getViewport applies the page's own /Rotate, so the preview matches what
@@ -102,7 +113,7 @@ async function renderPage(doc: PDFDocumentProxy, pageNumber: number): Promise<st
       canvas.toBlob(resolve, 'image/webp', 0.85),
     )
     if (!blob) throw new Error('Could not encode the thumbnail')
-    return URL.createObjectURL(blob)
+    return { url: URL.createObjectURL(blob), width: natural.width, height: natural.height }
   } finally {
     page.cleanup()
   }

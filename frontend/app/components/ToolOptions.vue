@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import type { Operation } from '~/types/api'
+import type { FileFamily, Operation } from '~/types/api'
 import type { OrganizedPage } from '~/utils/pageOrganizer'
+import type {
+  WatermarkAngle,
+  WatermarkColor,
+  WatermarkLayout,
+  WatermarkSize,
+} from '~/utils/watermarkLayout'
 import { createPagePlan } from '~/utils/pageOrganizer'
 
 /**
@@ -13,6 +19,8 @@ const props = defineProps<{
   pageCount?: number | null
   /** The browser's copy of the upload, for local page previews. */
   file?: File | null
+  /** Every upload's local copy with its family, for tools that mix inputs. */
+  localFiles?: { family: FileFamily; file: File | null }[]
 }>()
 const options = defineModel<Record<string, unknown>>({ required: true })
 /** Whether the current options can be submitted. */
@@ -22,10 +30,18 @@ function set(key: string, value: unknown) {
   options.value = { ...options.value, [key]: value }
 }
 
+// Watermark takes one PDF and optionally one image, in either order.
+const watermarkPdf = computed(
+  () => props.localFiles?.find((entry) => entry.family === 'pdf')?.file ?? null,
+)
+const watermarkImage = computed(
+  () => props.localFiles?.find((entry) => entry.family === 'image')?.file ?? null,
+)
+
 // Sensible defaults so the run button works without touching anything.
 watch(
-  () => [props.operation.key, props.pageCount] as const,
-  ([key, pageCount]) => {
+  () => [props.operation.key, props.pageCount, watermarkImage.value !== null] as const,
+  ([key, pageCount, hasImage]) => {
     if (key === 'compress') options.value = { level: 'medium' }
     else if (key === 'rotate') options.value = { angle: 90, pages: '' }
     else if (key === 'split') options.value = { mode: 'every_page', ranges: '' }
@@ -34,10 +50,47 @@ watch(
     else if (key === 'pdf_to_images') options.value = { format: 'png', dpi: 150, pages: '' }
     else if (key === 'protect') options.value = { password: '', allowPrinting: true, allowCopying: true }
     else if (key === 'unlock') options.value = { password: '' }
+    else if (key === 'watermark') {
+      options.value = {
+        // An image uploaded with the PDF can only mean an image watermark.
+        mode: hasImage ? 'image' : 'text',
+        ...(hasImage ? {} : { text: 'CONFIDENTIAL', color: 'gray' }),
+        size: 'medium',
+        opacity: 0.3,
+        angle: 45,
+        layout: 'center',
+        pages: '',
+      }
+    }
     else options.value = {}
   },
   { immediate: true },
 )
+
+const watermarkText = computed(() => (options.value.text as string | undefined) ?? '')
+// Latin-1 is what the server's standard font can draw; anything else would
+// come back as stand-in glyphs, so it is caught here before the round trip.
+const watermarkTextProblem = computed(() => {
+  if (options.value.mode !== 'text') return null
+  if (!watermarkText.value.trim()) return 'Enter the watermark text'
+  if (watermarkText.value.length > 100) return 'Keep it to 100 characters or fewer'
+  if (/[^\x00-\xff]/.test(watermarkText.value)) {
+    return 'Use Latin letters, numbers and punctuation. Other scripts are not supported yet.'
+  }
+  return null
+})
+
+const WATERMARK_COLORS_LIST = [
+  { value: 'gray', label: 'Gray', swatch: 'bg-neutral-500' },
+  { value: 'red', label: 'Red', swatch: 'bg-red-600' },
+  { value: 'blue', label: 'Blue', swatch: 'bg-blue-600' },
+  { value: 'black', label: 'Black', swatch: 'bg-black' },
+]
+const WATERMARK_SIZES = [
+  { value: 'small', label: 'Small' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large', label: 'Large' },
+]
 
 // The confirmation lives only here. It is never part of `options`, so it is
 // never sent anywhere.
@@ -61,6 +114,7 @@ watchEffect(() => {
   const key = props.operation.key
   if (key === 'protect') valid.value = password.value.length > 0 && confirmPassword.value === password.value
   else if (key === 'unlock') valid.value = password.value.length > 0
+  else if (key === 'watermark') valid.value = watermarkTextProblem.value === null
   else valid.value = true
 })
 
@@ -350,6 +404,136 @@ const COMPRESSION_LEVELS = [
         Used once to decrypt your file, then discarded. It is never stored.
       </p>
     </template>
+
+    <!-- Watermark -->
+    <div
+      v-else-if="operation.key === 'watermark'"
+      class="grid gap-6 sm:grid-cols-[minmax(0,1fr)_200px] lg:grid-cols-[minmax(0,1fr)_240px]"
+    >
+      <div class="space-y-5">
+        <template v-if="options.mode === 'text'">
+          <UFormField label="Text" :error="watermarkTextProblem ?? undefined">
+            <UInput
+              :model-value="watermarkText"
+              maxlength="100"
+              class="w-full"
+              @update:model-value="set('text', $event)"
+            />
+          </UFormField>
+          <UFormField label="Colour">
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="color in WATERMARK_COLORS_LIST"
+                :key="color.value"
+                type="button"
+                class="flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors"
+                :class="options.color === color.value
+                  ? 'border-accent-500 bg-accent-500/10 text-ink'
+                  : 'border-hairline text-ink-muted hover:border-hairline-strong'"
+                :aria-pressed="options.color === color.value"
+                @click="set('color', color.value)"
+              >
+                <span class="size-3 rounded-full" :class="color.swatch" />
+                {{ color.label }}
+              </button>
+            </div>
+          </UFormField>
+        </template>
+        <p v-else class="flex items-start gap-2 text-sm text-ink-muted">
+          <UIcon name="i-lucide-image" class="mt-0.5 size-4 shrink-0 text-accent-ink" />
+          Stamping the image you uploaded with the PDF.
+        </p>
+
+        <!-- Wraps rather than forcing columns: the button rows have fixed
+             widths and would overlap in a narrow options panel. -->
+        <div class="flex flex-wrap gap-x-8 gap-y-5">
+          <UFormField label="Size">
+            <div class="flex gap-2">
+              <UButton
+                v-for="size in WATERMARK_SIZES"
+                :key="size.value"
+                :color="options.size === size.value ? 'primary' : 'neutral'"
+                :variant="options.size === size.value ? 'solid' : 'outline'"
+                size="sm"
+                @click="set('size', size.value)"
+              >
+                {{ size.label }}
+              </UButton>
+            </div>
+          </UFormField>
+          <UFormField label="Angle">
+            <div class="flex gap-2">
+              <UButton
+                v-for="angle in [{ value: 45, label: 'Diagonal' }, { value: 0, label: 'Level' }]"
+                :key="angle.value"
+                :color="options.angle === angle.value ? 'primary' : 'neutral'"
+                :variant="options.angle === angle.value ? 'solid' : 'outline'"
+                size="sm"
+                @click="set('angle', angle.value)"
+              >
+                {{ angle.label }}
+              </UButton>
+            </div>
+          </UFormField>
+          <UFormField label="Layout">
+            <div class="flex gap-2">
+              <UButton
+                v-for="layout in [{ value: 'center', label: 'Centred' }, { value: 'tile', label: 'Tiled' }]"
+                :key="layout.value"
+                :color="options.layout === layout.value ? 'primary' : 'neutral'"
+                :variant="options.layout === layout.value ? 'solid' : 'outline'"
+                size="sm"
+                @click="set('layout', layout.value)"
+              >
+                {{ layout.label }}
+              </UButton>
+            </div>
+          </UFormField>
+          <UFormField
+            class="w-48"
+            :label="`Opacity · ${Math.round((options.opacity as number ?? 0.3) * 100)}%`"
+          >
+            <USlider
+              :model-value="Math.round((options.opacity as number ?? 0.3) * 100)"
+              :min="5"
+              :max="100"
+              :step="5"
+              class="pt-2"
+              @update:model-value="set('opacity', ($event as number) / 100)"
+            />
+          </UFormField>
+        </div>
+
+        <UFormField label="Pages" hint="Leave blank to stamp every page">
+          <UInput
+            :model-value="(options.pages as string) ?? ''"
+            placeholder="e.g. 1-3,7"
+            class="w-full sm:max-w-xs"
+            @update:model-value="set('pages', $event)"
+          />
+        </UFormField>
+
+        <p
+          v-if="options.mode === 'text'"
+          class="flex items-start gap-2 text-xs leading-relaxed text-ink-muted"
+        >
+          <UIcon name="i-lucide-info" class="mt-0.5 size-3.5 shrink-0 text-accent-ink" />
+          To stamp a logo instead, start over and upload the PDF together with a PNG, JPG or WEBP image.
+        </p>
+      </div>
+
+      <WatermarkPreview
+        :pdf="watermarkPdf"
+        :image="watermarkImage"
+        :mode="(options.mode as 'text' | 'image') ?? 'text'"
+        :text="watermarkText"
+        :color="(options.color as WatermarkColor) ?? 'gray'"
+        :size="(options.size as WatermarkSize) ?? 'medium'"
+        :opacity="(options.opacity as number) ?? 0.3"
+        :angle="(options.angle as WatermarkAngle) ?? 45"
+        :layout="(options.layout as WatermarkLayout) ?? 'center'"
+      />
+    </div>
 
     <!-- Organize pages -->
     <PageOrganizer
