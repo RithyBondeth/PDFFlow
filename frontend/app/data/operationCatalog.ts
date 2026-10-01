@@ -146,8 +146,12 @@ export const fallbackOperations: Operation[] = [
     multiFile: false,
     minFiles: 1,
     outputExtension: '.zip',
-    implemented: false,
-    optionsSchema: {},
+    implemented: true,
+    optionsSchema: {
+      format: { type: 'string', enum: ['original', 'png'] },
+      skipSmall: { type: 'boolean', default: true },
+      pages: { type: 'string', description: 'Blank means every page.' },
+    },
   },
   {
     key: 'images_to_pdf',

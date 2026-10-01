@@ -38,7 +38,7 @@ you wondering where your files went. PDFFlow is built around a simpler promise:
 
 | Private by default | Useful right away | Honest about your data |
 | --- | --- | --- |
-| No accounts, session cookies, analytics, or advertising trackers. | Twelve working tools cover common PDF, image and Office workflows. | Inputs are removed after processing; results expire within 30 minutes. |
+| No accounts, session cookies, analytics, or advertising trackers. | Thirteen working tools cover common PDF, image and Office workflows. | Inputs are removed after processing; results expire within 30 minutes. |
 
 The interface is responsive, supports light and dark themes, and shows file
 requirements and output formats before you upload anything.
@@ -61,10 +61,7 @@ requirements and output formats before you upload anything.
 | **Protect PDF** | Encrypt with AES-256 and optionally restrict printing or copying | PDF |
 | **Unlock PDF** | Remove protection with the document's correct password | PDF |
 | **Watermark PDF** | Stamp text or a logo, centred or tiled, with a live preview | PDF |
-
-### On the roadmap
-
-- Extract embedded images
+| **Extract Images** | Pull every embedded image out, JPEGs untouched, transparency kept | ZIP |
 
 The backend serves the operation catalog to the frontend, so the UI never
 advertises a tool that the worker cannot run.
