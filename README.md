@@ -1,94 +1,71 @@
-<p align="center">
-  <img src="frontend/public/favicon.svg" width="72" height="72" alt="PDFFlow logo">
-</p>
+<div align="center">
 
-<h1 align="center">PDFFlow</h1>
+<img src="frontend/public/favicon.svg" width="72" height="72" alt="PDFFlow logo">
 
-<p align="center">
-  <strong>Fast, private PDF tools that forget you were here.</strong><br>
-  Merge, split, compress, organise and convert documents—without an account,
-  tracking, or permanent storage.
-</p>
+# PDFFlow
 
-<p align="center">
-  <a href="https://github.com/RithyBondeth/PDFFlow/actions/workflows/ci.yml"><img src="https://github.com/RithyBondeth/PDFFlow/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <a href="https://github.com/RithyBondeth/PDFFlow/stargazers"><img src="https://img.shields.io/github/stars/RithyBondeth/PDFFlow?style=flat&logo=github&label=Stars" alt="GitHub stars"></a>
-  <a href="https://github.com/RithyBondeth/PDFFlow/issues"><img src="https://img.shields.io/github/issues/RithyBondeth/PDFFlow" alt="Open issues"></a>
-  <img src="https://img.shields.io/badge/privacy-no%20tracking-2563eb" alt="No tracking">
-  <img src="https://img.shields.io/badge/files-auto--deleted-0891b2" alt="Files auto-deleted">
-</p>
+**Fast, private PDF tools that forget you were here. Merge, split, compress, organize and convert documents with no account, no tracking, and no permanent storage.**
 
-<p align="center">
-  <a href="#quick-start"><strong>Run it locally</strong></a>
-  ·
-  <a href="#features"><strong>Explore the tools</strong></a>
-  ·
-  <a href="#api"><strong>Use the API</strong></a>
-  ·
-  <a href="https://github.com/RithyBondeth/PDFFlow"><strong>Star on GitHub ⭐</strong></a>
-</p>
+[![CI](https://github.com/RithyBondeth/PDFFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/RithyBondeth/PDFFlow/actions/workflows/ci.yml)
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Celery](https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Nuxt](https://img.shields.io/badge/Nuxt-00DC82?style=for-the-badge&logo=nuxtdotjs&logoColor=white)
+![Vue.js](https://img.shields.io/badge/Vue.js-4FC08D?style=for-the-badge&logo=vuedotjs&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
+</div>
+
+---
 
 ![PDFFlow landing page](docs/images/pdfflow-landing.png)
 
-## Why PDFFlow?
+## Overview
 
-Most online document tools ask for an account, track how you use them, or leave
-you wondering where your files went. PDFFlow is built around a simpler promise:
-**upload a document, do the job, download the result, and leave no footprint.**
+Most online document tools ask for an account, track how you use them, or leave you wondering where your files went. PDFFlow keeps a simpler promise: **upload a document, do the job, download the result, and leave no footprint.**
 
-| Private by default | Useful right away | Honest about your data |
-| --- | --- | --- |
-| No accounts, session cookies, analytics, or advertising trackers. | Thirteen working tools cover common PDF, image and Office workflows. | Inputs are removed after processing; results expire within 30 minutes. |
-
-The interface is responsive, supports light and dark themes, and shows file
-requirements and output formats before you upload anything.
+There are no accounts, session cookies, analytics, or advertising trackers. Uploaded files are stored under generated names in temporary storage. Inputs are deleted as soon as processing ends, and results expire within 30 minutes.
 
 ## Features
-
-### Ready today
 
 | Tool | What it does | Output |
 | --- | --- | --- |
 | **Merge PDF** | Combine multiple PDFs in drag-and-drop order | PDF |
-| **Split PDF** | Split every page or use explicit page ranges | ZIP |
+| **Split PDF** | Split every page, or use explicit page ranges | ZIP |
 | **Extract Pages** | Build a new document from selected pages | PDF |
 | **Rotate PDF** | Rotate the whole document or selected pages | PDF |
-| **Organise Pages** | Reorder, rotate, duplicate and remove pages visually | PDF |
+| **Organize Pages** | Reorder, rotate, duplicate and remove pages visually | PDF |
 | **Compress PDF** | Choose a compression level and compare file sizes | PDF |
 | **Office to PDF** | Convert DOCX, XLSX and PPTX with LibreOffice | PDF |
-| **Images to PDF** | Turn JPG, PNG and WEBP images into one PDF, fitted or on A4/Letter | PDF |
+| **Images to PDF** | Turn JPG, PNG and WEBP images into one PDF | PDF |
 | **PDF to Images** | Render pages as PNG, JPEG or WEBP at 72, 150 or 300 DPI | ZIP |
 | **Protect PDF** | Encrypt with AES-256 and optionally restrict printing or copying | PDF |
-| **Unlock PDF** | Remove protection with the document's correct password | PDF |
-| **Watermark PDF** | Stamp text or a logo, centred or tiled, with a live preview | PDF |
-| **Extract Images** | Pull every embedded image out, JPEGs untouched, transparency kept | ZIP |
+| **Unlock PDF** | Remove protection with the document's password | PDF |
+| **Watermark PDF** | Stamp text or a logo, centered or tiled, with a live preview | PDF |
+| **Extract Images** | Pull out every embedded image, with JPEGs untouched and transparency kept | ZIP |
 
-The backend serves the operation catalog to the frontend, so the UI never
-advertises a tool that the worker cannot run.
+Also included:
 
-## Privacy by design
+- **Live progress** over Server-Sent Events.
+- **A public REST API,** with no keys or accounts needed.
+- **Responsive UI** with light and dark themes.
+- **Uploads treated as hostile:** content signatures, extensions and size limits are checked while the file streams in.
+- **Rate limiting** and safe error envelopes that include request IDs.
 
-```text
-Upload                  Process                  Download                Delete
-  │                        │                         │                      │
-  ├─ validate content ────►├─ isolated worker ─────►├─ private job URL ───►│
-  └─ random disk name      └─ progress over SSE     └─ no-store response   └─ ≤ 30 min
-```
+## Tech Stack
 
-- **No identity to collect.** The browser keeps only a random job UUID in
-  memory. A page reload genuinely starts over.
-- **No original filename on disk.** Files are stored under generated UUIDs;
-  the user-provided name is display-only.
-- **No permanent document storage.** The default Docker setup uses a `tmpfs`
-  volume. PostgreSQL contains metadata, never document contents.
-- **Deletion has a safety net.** Inputs are purged as soon as processing ends.
-  A scheduled sweep removes expired results and orphaned files every five
-  minutes.
-- **Uploads are treated as hostile.** Content signatures, extensions and size
-  limits are checked while the file streams in.
-
-Read the full [security model](docs/security.md) for controls, trade-offs and
-the deliberate limitations of an anonymous service.
+| Area | Technology |
+| --- | --- |
+| Frontend | Nuxt 4, Vue 3, TypeScript, Tailwind CSS 4, Nuxt UI, Pinia |
+| API | FastAPI, Pydantic v2, SQLAlchemy 2, Alembic |
+| Processing | Celery 5, PyMuPDF, pypdf, Pillow, LibreOffice |
+| Data and events | PostgreSQL 16, Redis 7 |
+| Infrastructure | Docker Compose, Nginx, Railway |
+| Testing | Pytest, Vitest, GitHub Actions |
 
 ## Architecture
 
@@ -113,31 +90,20 @@ the deliberate limitations of an anonymous service.
                                 └─────┬──────┘
                                       │
                                 ┌─────▼──────┐
-                                │ temporary │
-                                │  storage  │
+                                │ temporary  │
+                                │  storage   │
                                 └────────────┘
 ```
 
-Redis is both the Celery broker and the pub/sub channel for live progress.
-That allows API replicas to scale horizontally without breaking the browser's
-server-sent event stream. See [architecture.md](docs/architecture.md) for the
-decisions behind each component.
+Redis is both the Celery broker and the pub/sub channel for live progress, so API replicas can scale horizontally. See [architecture.md](docs/architecture.md) and the [security model](docs/security.md).
 
-### Technology
+## Getting Started
 
-| Layer | Built with |
-| --- | --- |
-| Frontend | Nuxt 4, Vue 3, TypeScript, Tailwind CSS v4, Nuxt UI, Pinia |
-| API | FastAPI, Pydantic v2, SQLAlchemy 2, Alembic |
-| Processing | Celery 5, PyMuPDF, pypdf, Pillow, LibreOffice |
-| Data and events | PostgreSQL 16, Redis 7 |
-| Infrastructure | Docker Compose, Nginx, Railway-ready services |
+### Prerequisites
 
-## Quick start
+- [Docker](https://docs.docker.com/get-docker/) with Compose
 
-### Docker Compose (recommended)
-
-You need [Docker](https://docs.docker.com/get-docker/) with Compose enabled.
+### Installation
 
 ```bash
 git clone https://github.com/RithyBondeth/PDFFlow.git
@@ -146,43 +112,23 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Open **http://localhost:8080**. Interactive API documentation is available at
-**http://localhost:8080/docs**.
-
-The migration service applies the database schema before the API and workers
-start. Stop the stack with `docker compose down`.
+Open [http://localhost:8080](http://localhost:8080). Interactive API docs are at [http://localhost:8080/docs](http://localhost:8080/docs).
 
 <details>
 <summary><strong>Run the services separately for development</strong></summary>
 
-### Backend
-
 ```bash
+# Backend
 cd backend
 python -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 .venv/bin/uvicorn app.main:app --reload
-```
 
-### Worker and cleanup scheduler
-
-Redis and PostgreSQL must already be running.
-
-```bash
-cd backend
+# Worker and scheduler (Redis and PostgreSQL must be running)
 .venv/bin/celery -A app.worker.celery_app.celery_app worker --loglevel=info
-```
-
-In another terminal:
-
-```bash
-cd backend
 .venv/bin/celery -A app.worker.celery_app.celery_app beat --loglevel=info
-```
 
-### Frontend
-
-```bash
+# Frontend
 cd frontend
 npm install
 npm run dev
@@ -190,126 +136,73 @@ npm run dev
 
 </details>
 
-## API
-
-PDFFlow's web interface is a client of the same REST API available to your own
-scripts and applications. There are no keys or accounts.
-
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/operations` | Discover available tools and file requirements |
-| `POST` | `/api/upload` | Upload one or more validated files |
-| `POST` | `/api/jobs/create` | Queue an operation |
-| `GET` | `/api/jobs/{id}/events` | Follow progress over server-sent events |
-| `GET` | `/api/jobs/{id}/status` | Poll lightweight job status |
-| `GET` | `/api/download/{id}` | Download the completed result |
-| `GET` | `/api/health` | Check API, PostgreSQL and Redis health |
-
-Errors use a stable envelope and include a request ID without exposing paths,
-stack traces or stored filenames:
-
-```json
-{
-  "error": {
-    "code": "file_too_large",
-    "message": "File exceeds the 100 MB limit.",
-    "requestId": "a1b2c3d4e5f6"
-  }
-}
-```
-
-Swagger UI is served at `/docs`, ReDoc at `/redoc`, and the OpenAPI schema at
-`/openapi.json`.
-
-## Configuration
-
-Every setting has a development default. Copy [`.env.example`](.env.example)
-to `.env` and adjust what your environment needs.
+### Environment Variables
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `HTTP_PORT` | `8080` | Public Nginx port |
-| `DATABASE_URL` | Local PostgreSQL | SQLAlchemy connection URL |
-| `REDIS_URL` | `redis://redis:6379/0` | Queue, results and progress events |
-| `STORAGE_ROOT` | `/data/storage` | Temporary upload/result root |
-| `MAX_UPLOAD_BYTES` | `104857600` | Per-file streaming limit |
+| `MAX_UPLOAD_BYTES` | `104857600` | Per-file upload limit (100 MB) |
 | `MAX_FILES_PER_JOB` | `25` | Files accepted by one job |
 | `FILE_TTL_MINUTES` | `30` | Maximum result lifetime |
 | `CLEANUP_INTERVAL_SECONDS` | `300` | Expired-file sweep interval |
 | `CORS_ORIGINS` | Localhost | Allowed browser origins |
 | `TRUSTED_PROXIES` | Private networks | Proxies allowed to set forwarding headers |
 
-## Testing
+### Testing
 
 ```bash
-# Backend
 cd backend && .venv/bin/pytest
-
-# Frontend
-cd frontend && npm test
-
-# Frontend type checking and production build
-cd frontend && npm run typecheck && npm run build
+cd frontend && npm test && npm run typecheck && npm run build
 ```
 
-The backend suite covers the complete upload → job → download path, storage
-escape attempts, streaming limits, MIME mismatches, page ranges, OOXML package
-validation, document operations, safe errors, rate limiting and cleanup. The
-frontend suite covers the workspace state, API reference, page organiser and
-formatting utilities. CI also builds the production containers.
+## API
 
-## Project structure
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/operations` | Discover the available tools and their file requirements |
+| `POST` | `/api/upload` | Upload one or more validated files |
+| `POST` | `/api/jobs/create` | Queue an operation |
+| `GET` | `/api/jobs/{id}/events` | Follow progress over Server-Sent Events |
+| `GET` | `/api/jobs/{id}/status` | Poll the job status |
+| `GET` | `/api/download/{id}` | Download the completed result |
+| `GET` | `/api/health` | Check API, PostgreSQL and Redis health |
+
+Swagger UI is at `/docs`, ReDoc at `/redoc`, and the OpenAPI schema at `/openapi.json`.
+
+## Project Structure
 
 ```text
 PDFFlow/
-├── frontend/                  Nuxt application and server proxy
-│   ├── app/components/        Upload, tools, jobs and page organiser UI
-│   ├── app/pages/             Landing page, workspace and API reference
-│   └── tests/                 Vitest suite
+├── frontend/                  # Nuxt application and server proxy
 ├── backend/
-│   ├── app/api/routes/        Health, uploads, jobs and downloads
-│   ├── app/services/          Validation, storage, events and rate limiting
-│   ├── app/worker/            Celery dispatcher and document operations
-│   └── tests/                 Pytest suite
-├── database/migrations/       Alembic migrations
-├── infrastructure/            Compose and Nginx production configuration
-├── docs/                      Architecture, security and deployment guides
-└── compose.yaml               Local full-stack entry point
+│   ├── app/api/routes/        # Health, uploads, jobs, downloads
+│   ├── app/services/          # Validation, storage, events, rate limiting
+│   ├── app/worker/            # Celery tasks and document operations
+│   └── tests/
+├── database/migrations/       # Alembic migrations
+├── infrastructure/            # Production Compose and Nginx configuration
+├── docs/                      # Architecture, security, deployment guides
+└── compose.yaml               # Local full-stack entry point
 ```
 
 ## Deployment
 
-- **Railway Hobby:** follow the step-by-step [Railway deployment guide](docs/railway.md).
-- **Docker host:** combine the development and production Compose files as
-  described in [`infrastructure/docker-compose.prod.yml`](infrastructure/docker-compose.prod.yml).
-- **TLS:** the production Nginx configuration supports Let's Encrypt bootstrap
-  and renewal through the included Certbot services.
+- **Railway:** follow the [Railway deployment guide](docs/railway.md).
+- **Docker host:** combine the development and production Compose files, as described in [`infrastructure/docker-compose.prod.yml`](infrastructure/docker-compose.prod.yml).
+- **TLS:** the production Nginx configuration supports Let's Encrypt through the included Certbot services.
 
-Production deployments should set a strong PostgreSQL password, use the exact
-public origin for CORS, narrow trusted proxy ranges, provide persistent
-temporary capacity, and run **exactly one** Celery beat replica.
+In production, set a strong PostgreSQL password, use the exact public origin for CORS, narrow the trusted proxy ranges, and run **exactly one** Celery beat replica.
 
 ## Contributing
 
-Contributions, bug reports and thoughtful feature ideas are welcome.
+Contributions, bug reports, and feature ideas are welcome. Fork the repository, create a focused branch, add tests, and open a pull request. For larger changes, [open an issue](https://github.com/RithyBondeth/PDFFlow/issues/new) first.
 
-1. Fork the repository and create a focused feature branch.
-2. Add or update tests with your change.
-3. Run the relevant test and build commands above.
-4. Open a pull request explaining the user-facing result.
+If PDFFlow is useful to you, please [⭐ star the repository](https://github.com/RithyBondeth/PDFFlow).
 
-For larger changes, [open an issue](https://github.com/RithyBondeth/PDFFlow/issues/new)
-first so the approach can be discussed before implementation.
+## Author
 
-## Help PDFFlow grow
+**Rithy Bondeth** — Full Stack Developer & AI Engineer
 
-If PDFFlow is useful to you, the easiest way to support it is to
-[**star the repository**](https://github.com/RithyBondeth/PDFFlow) and share it
-with someone who works with documents. A star helps other people discover the
-project—and gives me a strong signal to keep building the next tool. ⭐
-
-<p align="center">
-  <a href="https://github.com/RithyBondeth/PDFFlow"><strong>⭐ Star PDFFlow</strong></a>
-  ·
-  <a href="https://github.com/RithyBondeth"><strong>Follow @RithyBondeth</strong></a>
-</p>
+[![Portfolio](https://img.shields.io/badge/Portfolio-0A0A0A?style=for-the-badge&logo=vercel&logoColor=white)](https://bondeth.dev)
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/RithyBondeth)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/rithy-bondeth-484073282/)
