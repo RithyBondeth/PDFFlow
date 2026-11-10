@@ -185,3 +185,14 @@ persistence on it, or accept that risk explicitly.
       disk. See section 6.
 - [ ] Exactly one `beat` replica.
 - [ ] `/api/health` monitored.
+
+## Frontend dependency constraints
+
+The frontend lockfile uses patched Nuxt 4 and Vue 3 releases. Overrides pin `glob`
+14.0.4 and `minimatch` 11.0.5 to remove their transitive traversal/complexity
+advisories from Nitro's packaging dependencies. The Rollup configuration merger
+is pinned to the unaffected `deepmerge` 4.1.1 release because the published
+4.2.0–4.3.1 releases have an outstanding prototype-poisoning advisory and no
+patched 4.x release is published. Review these pins when upstream dependencies
+adopt fixed versions. The frontend production audit, type checks, unit tests,
+and Nuxt production build verify this dependency graph.
