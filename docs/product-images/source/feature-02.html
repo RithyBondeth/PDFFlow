@@ -2,75 +2,1338 @@
 <html lang="en">
   <meta charset="utf-8" /><meta
     name="viewport"
-    content="width=device-width"
-  /><title>PDFFlow — feature</title
-  ><link rel="stylesheet" href="style.css" />
-  <main
-    class="artboard feature"
-    style="--bg: #164b9c; --fg: #f6faff; --accent: #a9d8ff"
-  >
-    <svg
-      class="contours"
-      viewBox="0 0 1200 900"
-      preserveAspectRatio="none"
-      aria-hidden="true"
+    content="width=device-width,initial-scale=1"
+  /><title>PDFFlow</title
+  ><style>
+    @font-face {
+      font-family: Ubuntu;
+      src: url(fonts/Ubuntu-Regular.ttf);
+      font-weight: 400;
+      font-display: block;
+    }
+    @font-face {
+      font-family: Ubuntu;
+      src: url(fonts/Ubuntu-Bold.ttf);
+      font-weight: 700;
+      font-display: block;
+    }
+    @font-face {
+      font-family: Kantumruy Pro;
+      src: url(fonts/KantumruyPro-Khmer.woff2);
+      font-weight: 100 900;
+      unicode-range: U+1780-17FF, U+19E0-19FF;
+      font-display: block;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family:
+        Kantumruy Pro,
+        Ubuntu,
+        sans-serif;
+    }
+    .art {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      background: var(--paper);
+      color: var(--ink);
+      width: 1200px;
+      height: 675px;
+    }
+    .art:before {
+      position: absolute;
+      pointer-events: none;
+      z-index: -1;
+    }
+    .art:before {
+      content: "";
+      inset: 0;
+      background: var(--texture, none);
+    }
+    .identity {
+      position: absolute;
+      inset: 32px 48px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      z-index: 3;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 17px;
+      font-weight: 700;
+    }
+    .brand img {
+      width: 34px;
+      height: 34px;
+      object-fit: contain;
+    }
+    .eyebrow,
+    .caption,
+    .footer,
+    .kicker {
+      font-size: 11px;
+      letter-spacing: 0.13em;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .eyebrow {
+      text-align: right;
+    }
+    .copy {
+      position: absolute;
+      z-index: 2;
+      left: 48px;
+      top: 154px;
+      width: 430px;
+    }
+    h1 {
+      font-size: 62px;
+      line-height: 1.02;
+      letter-spacing: -0.043em;
+      margin: 0;
+    }
+    h1 span {
+      color: var(--accent);
+    }
+    p {
+      font-size: 19px;
+      line-height: 1.43;
+      margin: 19px 0 0;
+      max-width: 35ch;
+    }
+    .kicker {
+      color: var(--accent);
+      margin-bottom: 15px;
+    }
+    .visual {
+      position: absolute;
+      inset: 113px 48px 73px 498px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 17px;
+      z-index: 1;
+    }
+    .figure {
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      max-width: 100%;
+      max-height: 100%;
+    }
+    .figure img {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 15px 20px #11182726);
+    }
+    .visual .figure {
+      height: 100%;
+    }
+    .visual .figure + .figure {
+      height: 88%;
+      align-self: flex-end;
+    }
+    .footer {
+      position: absolute;
+      left: 48px;
+      right: 48px;
+      bottom: 27px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border-top: 1px solid color-mix(in srgb, var(--ink) 30%, transparent);
+      padding-top: 13px;
+    }
+    .footer [lang="km"] {
+      font-size: 17px;
+      letter-spacing: 0;
+      line-height: 1.2;
+    }
+    .caption {
+      position: absolute;
+      bottom: 57px;
+      right: 48px;
+      opacity: 0.8;
+    }
+    .status {
+      position: absolute;
+      right: 48px;
+      top: 75px;
+      font-size: 10px;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+    .notebook {
+      --texture: repeating-linear-gradient(
+        0deg,
+        transparent 0 24px,
+        color-mix(in srgb, var(--ink) 8%, transparent) 24px 25px
+      );
+    }
+    .notebook .copy {
+      top: 187px;
+      left: 64px;
+      width: 370px;
+      transform: rotate(-3deg);
+    }
+    .notebook .visual .figure {
+      transform: rotate(2deg);
+    }
+    .notebook .figure img {
+      border: 6px solid #fffcf5;
+      outline: 1px solid color-mix(in srgb, var(--ink) 55%, transparent);
+    }
+    .notebook .hero-note {
+      position: absolute;
+      left: 84px;
+      bottom: 142px;
+      transform: rotate(-6deg);
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 15px;
+    }
+    .atlas,
+    .survey {
+      --texture:
+        repeating-linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--accent) 11%, transparent) 0 1px,
+          transparent 1px 29px
+        ),
+        repeating-linear-gradient(
+          0deg,
+          color-mix(in srgb, var(--accent) 11%, transparent) 0 1px,
+          transparent 1px 29px
+        );
+    }
+    .atlas .copy {
+      top: 113px;
+      left: 53px;
+      width: 430px;
+    }
+    .atlas .visual {
+      inset: 106px 49px 83px 512px;
+    }
+    .atlas .figure img,
+    .survey .figure img {
+      outline: 1px solid var(--accent);
+      outline-offset: 7px;
+    }
+    .atlas .hero-note {
+      position: absolute;
+      left: 56px;
+      bottom: 100px;
+      color: var(--accent);
+      font-size: 94px;
+      line-height: 1;
+    }
+    .survey .copy {
+      left: auto;
+      right: 45px;
+      top: 195px;
+      width: 370px;
+    }
+    .survey .visual {
+      inset: 105px 450px 82px 51px;
+    }
+    .survey .hero-note {
+      position: absolute;
+      right: 57px;
+      bottom: 111px;
+      font-size: 70px;
+      color: var(--accent);
+    }
+    .film {
+      --texture:
+        radial-gradient(
+          ellipse at 75% 43%,
+          color-mix(in srgb, var(--accent) 17%, var(--paper)),
+          transparent 64%
+        ),
+        linear-gradient(120deg, #fbfcfd, var(--paper));
+    }
+    .film .copy {
+      width: 370px;
+      top: 165px;
+    }
+    .film .visual {
+      left: 433px;
+      right: 57px;
+    }
+    .film .figure {
+      height: auto;
+      padding: 18px 0;
+      border-block: 6px dotted
+        color-mix(in srgb, var(--accent) 53%, transparent);
+    }
+    .cinema .copy,
+    .world .copy,
+    .auto .copy {
+      left: 50px;
+      top: auto;
+      bottom: 98px;
+      width: 490px;
+    }
+    .cinema .visual,
+    .world .visual,
+    .auto .visual {
+      inset: 84px 0 0 0;
+    }
+    .cinema .visual .figure,
+    .world .visual .figure,
+    .auto .visual .figure {
+      width: 100%;
+    }
+    .cinema .visual img,
+    .world .visual img,
+    .auto .visual img {
+      width: 100%;
+      height: 100%;
+      max-height: none;
+      object-fit: cover;
+      object-position: center;
+    }
+    .cinema .visual:after,
+    .world .visual:after,
+    .auto .visual:after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(0deg, var(--paper), transparent 50%),
+        linear-gradient(90deg, var(--paper), transparent 70%);
+    }
+    .cinema .copy h1,
+    .world .copy h1,
+    .auto .copy h1 {
+      text-shadow: 0 2px 18px var(--paper);
+    }
+    .cinema .status,
+    .world .status,
+    .auto .status {
+      top: 69px;
+    }
+    .world .copy {
+      top: 125px;
+      bottom: auto;
+      width: 470px;
+    }
+    .world .visual:after {
+      background:
+        linear-gradient(0deg, var(--paper), transparent 31%),
+        linear-gradient(90deg, var(--paper), transparent 68%);
+    }
+    .auto .copy {
+      left: auto;
+      right: 47px;
+      text-align: right;
+      bottom: 100px;
+    }
+    .auto .copy p {
+      margin-left: auto;
+    }
+    .auto .visual:after {
+      background:
+        linear-gradient(0deg, var(--paper), transparent 45%),
+        linear-gradient(270deg, var(--paper), transparent 78%);
+    }
+    .voice {
+      --texture: radial-gradient(
+        ellipse at 15% 33%,
+        color-mix(in srgb, var(--accent) 22%, var(--paper)) 0,
+        transparent 47%
+      );
+    }
+    .voice .copy {
+      left: 688px;
+      top: 150px;
+      width: 460px;
+    }
+    .voice .visual {
+      left: 49px;
+      right: 559px;
+      top: 103px;
+    }
+    .voice .figure img {
+      border-radius: 15px;
+    }
+    .voice .wave {
+      display: flex;
+      align-items: center;
+      height: 50px;
+      gap: 5px;
+      margin-top: 19px;
+    }
+    .voice .wave i {
+      width: 6px;
+      border-radius: 100px;
+      background: var(--accent);
+    }
+    .hardware {
+      --texture: radial-gradient(
+        color-mix(in srgb, var(--accent) 17%, transparent) 1px,
+        transparent 1px
+      );
+      background-size: 15px 15px;
+    }
+    .hardware .copy {
+      top: 143px;
+    }
+    .hardware .figure img {
+      border: 8px solid #e1eae6;
+      outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+    }
+    .hardware .hero-note {
+      position: absolute;
+      left: 51px;
+      bottom: 113px;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.19em;
+    }
+    .optic .copy {
+      top: 174px;
+      width: 400px;
+    }
+    .optic .figure img {
+      border-radius: 50% 50% 10px 10px;
+      clip-path: inset(0 round 48% 48% 8px 8px);
+    }
+    .optic .visual {
+      inset: 101px 70px 79px 468px;
+    }
+    .desktop {
+      --texture:
+        radial-gradient(ellipse at 67% 70%, #1b62b5 0, transparent 58%),
+        linear-gradient(142deg, #132a5f, var(--paper));
+    }
+    .desktop .copy {
+      left: 65px;
+      top: 122px;
+      width: 460px;
+    }
+    .desktop .visual {
+      inset: 146px 50px 74px 523px;
+    }
+    .desktop .figure img {
+      border-radius: 18px;
+    }
+    .desktop .hero-note {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 152px;
+      height: 22px;
+      border-radius: 0 0 12px 12px;
+      background: #0b152a;
+      transform: translateX(-50%);
+      font-size: 0;
+    }
+    .career .copy {
+      left: 55px;
+      top: 126px;
+      width: 455px;
+    }
+    .career .copy h1 {
+      font-size: 75px;
+    }
+    .career .visual {
+      left: 518px;
+      right: 53px;
+      inset-block: 96px 82px;
+    }
+    .career .figure:first-child {
+      transform: rotate(-8deg);
+    }
+    .career .figure:nth-child(2) {
+      transform: rotate(8deg);
+    }
+    .career .figure img,
+    .ledger .figure img,
+    .planner .figure img {
+      border-radius: 20px;
+    }
+    .dialogue {
+      --texture: linear-gradient(155deg, #f7fbff, #d9e8ff);
+    }
+    .dialogue .copy {
+      left: auto;
+      right: 57px;
+      top: 137px;
+      width: 428px;
+    }
+    .dialogue .visual {
+      left: 46px;
+      right: 511px;
+    }
+    .dialogue .figure img {
+      border-radius: 40px 40px 40px 4px;
+      outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+    }
+    .terminal {
+      --texture: repeating-linear-gradient(
+        0deg,
+        color-mix(in srgb, var(--accent) 6%, transparent) 0 1px,
+        transparent 1px 4px
+      );
+    }
+    .terminal .copy {
+      top: 171px;
+      left: 52px;
+      width: 419px;
+    }
+    .terminal .copy h1 {
+      font-size: 58px;
+    }
+    .terminal .figure img {
+      border: 1px solid color-mix(in srgb, var(--accent) 65%, transparent);
+    }
+    .terminal .hero-note {
+      position: absolute;
+      left: 52px;
+      bottom: 132px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .study {
+      --texture: repeating-linear-gradient(
+        0deg,
+        transparent 0 32px,
+        color-mix(in srgb, var(--accent) 12%, transparent) 32px 33px
+      );
+    }
+    .study .copy {
+      left: 65px;
+      top: 138px;
+      width: 422px;
+    }
+    .study .visual {
+      left: 508px;
+      right: 59px;
+    }
+    .study .figure {
+      transform: rotate(-2deg);
+    }
+    .study .figure img {
+      border: 8px solid #fbfdff;
+    }
+    .ledger {
+      --texture: radial-gradient(ellipse at 80% 47%, #14674b, transparent 60%);
+    }
+    .ledger .copy {
+      left: 68px;
+      top: 162px;
+      width: 435px;
+    }
+    .ledger .visual {
+      inset: 93px 70px 80px 541px;
+    }
+    .ledger .visual .figure {
+      height: 95%;
+    }
+    .ledger .visual .figure + .figure {
+      height: 88%;
+      align-self: flex-end;
+    }
+    .ledger .hero-note {
+      position: absolute;
+      left: 73px;
+      bottom: 112px;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: 33px;
+    }
+    .planner {
+      --texture: repeating-linear-gradient(
+        90deg,
+        transparent 0 34px,
+        color-mix(in srgb, var(--accent) 12%, transparent) 34px 35px
+      );
+    }
+    .planner .copy {
+      left: auto;
+      right: 45px;
+      top: 164px;
+      width: 432px;
+    }
+    .planner .visual {
+      left: 55px;
+      right: 510px;
+      top: 90px;
+    }
+    .planner .figure:first-child {
+      transform: rotate(-7deg);
+    }
+    .planner .figure:nth-child(2) {
+      transform: rotate(7deg);
+    }
+    .document {
+      --texture: linear-gradient(145deg, #fbfcff 50%, #d3e3ff 50%);
+    }
+    .document .copy {
+      top: 158px;
+    }
+    .document .figure img {
+      border: 10px solid #f9fbff;
+      outline: 1px solid #a7bfe4;
+    }
+    .document .figure {
+      transform: rotate(-4deg);
+    }
+    .document .figure:before {
+      content: "";
+      position: absolute;
+      inset: 14% 5%;
+      border: 1px solid #7e9dcf;
+      background: #dbe8ff;
+      z-index: -1;
+      transform: rotate(11deg);
+    }
+    .yearbook {
+      --texture: radial-gradient(ellipse at 68% 55%, #27424b, transparent 58%);
+    }
+    .yearbook .copy {
+      top: 141px;
+      left: 49px;
+      width: 430px;
+    }
+    .yearbook .figure {
+      transform: rotate(3deg);
+    }
+    .yearbook .figure img {
+      border: 8px solid #e3f1f4;
+      border-bottom-width: 26px;
+    }
+    .yearbook .hero-note {
+      position: absolute;
+      left: 52px;
+      bottom: 101px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    .journal .copy {
+      left: 47px;
+      top: 140px;
+      width: 391px;
+    }
+    .journal .visual {
+      left: 451px;
+      top: 100px;
+      right: 44px;
+    }
+    .journal .figure img {
+      border-block: 1px solid color-mix(in srgb, var(--accent) 66%, transparent);
+    }
+    .journal .identity {
+      border-bottom: 1px solid color-mix(in srgb, var(--ink) 35%, transparent);
+      padding-bottom: 12px;
+    }
+    .keynote .copy {
+      text-align: center;
+      top: 102px;
+      left: 125px;
+      width: 950px;
+    }
+    .keynote .copy h1 {
+      font-size: 55px;
+    }
+    .keynote .copy p {
+      margin: 9px auto 0;
+      max-width: 60ch;
+      font-size: 17px;
+    }
+    .keynote .copy h1 br {
+      display: none;
+    }
+    .keynote .copy h1 span {
+      margin-left: 0.24em;
+    }
+    .keynote .visual {
+      inset: 246px 81px 68px;
+    }
+    .keynote .figure img {
+      border-radius: 7px;
+    }
+    .news {
+      --texture: repeating-linear-gradient(
+        90deg,
+        transparent 0 219px,
+        color-mix(in srgb, var(--accent) 12%, transparent) 219px 220px
+      );
+    }
+    .news .identity {
+      border-block: 3px double var(--accent);
+      padding: 8px 0;
+    }
+    .news .copy {
+      top: 155px;
+      left: 50px;
+      width: 405px;
+    }
+    .news .copy h1 {
+      font-size: 63px;
+    }
+    .news .visual {
+      left: 471px;
+      right: 49px;
+      top: 113px;
+    }
+    .news .figure img {
+      outline: 1px solid var(--accent);
+      outline-offset: 7px;
+    }
+    .panel {
+      width: 540px;
+      height: 720px;
+      display: grid;
+      grid-template-rows: auto auto minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 24px 32px;
+    }
+    .panel .identity,
+    .panel .copy,
+    .panel .visual,
+    .panel .footer {
+      position: relative;
+      inset: auto;
+      width: auto;
+      height: auto;
+      min-height: 0;
+      transform: none;
+    }
+    .panel .identity {
+      grid-row: 1;
+      min-height: 35px;
+      padding: 0;
+    }
+    .panel .brand {
+      font-size: 13px;
+    }
+    .panel .brand img {
+      width: 26px;
+      height: 26px;
+    }
+    .panel .copy {
+      grid-row: 2;
+      text-align: left;
+    }
+    .panel .copy h1 {
+      font-size: 44px;
+      line-height: 1.04;
+    }
+    .panel .copy h1 br {
+      display: initial;
+    }
+    .panel .copy h1 span {
+      margin-left: 0;
+    }
+    .panel .copy p {
+      font-size: 16px;
+      max-width: 44ch;
+      margin: 12px 0 0;
+    }
+    .panel .kicker {
+      font-size: 10px;
+      margin-bottom: 10px;
+    }
+    .panel .visual {
+      grid-row: 3;
+    }
+    .panel .visual .figure {
+      max-height: 100%;
+      max-width: 100%;
+      height: 100%;
+      width: auto;
+    }
+    .panel .visual img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+    .panel .visual:after {
+      display: none;
+    }
+    .panel .footer {
+      grid-row: 4;
+      padding-top: 9px;
+      font-size: 9px;
+    }
+    .panel .footer [lang="km"] {
+      font-size: 15px;
+    }
+    .panel .status {
+      right: 32px;
+      top: 67px;
+      font-size: 8px;
+    }
+    .panel.notebook .copy {
+      padding-top: 15px;
+    }
+    .panel.atlas .copy,
+    .panel.survey .copy {
+      border-bottom: 1px solid var(--accent);
+      padding-bottom: 13px;
+    }
+    .panel.film .figure {
+      height: auto;
+    }
+    .panel.cinema,
+    .panel.auto,
+    .panel.world {
+      grid-template-rows: auto minmax(0, 1fr) auto auto;
+    }
+    .panel.cinema .copy,
+    .panel.auto .copy,
+    .panel.world .copy {
+      grid-row: 3;
+    }
+    .panel.cinema .visual,
+    .panel.auto .visual,
+    .panel.world .visual {
+      grid-row: 2;
+    }
+    .panel.cinema .copy h1,
+    .panel.auto .copy h1,
+    .panel.world .copy h1 {
+      font-size: 43px;
+    }
+    .panel.cinema .visual img,
+    .panel.auto .visual img,
+    .panel.world .visual img {
+      filter: none;
+    }
+    .panel.voice .copy {
+      padding-top: 12px;
+    }
+    .panel.voice .wave {
+      display: none;
+    }
+    .panel.optic .figure img {
+      clip-path: none;
+      border-radius: 14px;
+    }
+    .panel.career .figure,
+    .panel.planner .figure {
+      transform: none;
+    }
+    .panel.career .copy h1 {
+      font-size: 49px;
+    }
+    .panel.dialogue .copy {
+      padding-left: 34px;
+    }
+    .panel.dialogue .visual {
+      padding-left: 18px;
+    }
+    .panel.planner .copy {
+      padding-left: 30px;
+    }
+    .panel.ledger .copy {
+      padding-top: 11px;
+    }
+    .panel.yearbook .copy {
+      transform: rotate(-2deg);
+      padding: 4px 8px;
+    }
+    .panel.keynote .copy {
+      text-align: center;
+      padding-top: 12px;
+    }
+    .panel.keynote .copy p {
+      margin-inline: auto;
+    }
+    .panel.news .identity {
+      padding-block: 5px;
+    }
+    .panel.news .copy h1 {
+      font-size: 46px;
+    }
+    .panel.news .copy {
+      padding-bottom: 8px;
+      border-bottom: 3px double var(--accent);
+    }
+    .sequence {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      width: 100%;
+      display: grid;
+      align-content: center;
+      gap: 0;
+    }
+    .sequence li {
+      display: grid;
+      grid-template-columns: 47px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 16px 0;
+      border-top: 1px solid color-mix(in srgb, var(--ink) 27%, transparent);
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .sequence li:last-child {
+      border-bottom: 1px solid color-mix(in srgb, var(--ink) 27%, transparent);
+    }
+    .notebook .sequence li {
+      border-style: dashed;
+    }
+    .voice .sequence li {
+      border-top-width: 2px;
+    }
+    .film .sequence {
+      padding-inline: 16px;
+      border-inline: 5px dotted var(--accent);
+    }
+    .news .sequence li {
+      border-color: var(--accent);
+    }
+    .keynote .sequence li {
+      grid-template-columns: 30px minmax(0, 1fr);
+      font-weight: 400;
+    }
+    .footer {
+      z-index: 2;
+    }
+    .optic .figure img {
+      clip-path: none;
+      border-radius: 17px;
+      outline: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
+    }
+    /* Quiet brand detail in place of the former numbered watermark. */
+    .identity {
+      padding-bottom: 12px;
+      border-bottom: 1px solid color-mix(in srgb, var(--ink) 19%, transparent);
+    }
+    .eyebrow,
+    .footer {
+      letter-spacing: 0.105em;
+    }
+    .copy p {
+      color: color-mix(in srgb, var(--ink) 92%, var(--paper));
+      max-width: 38ch;
+    }
+    .accent-mark {
+      display: block;
+      width: 50px;
+      height: 4px;
+      margin-bottom: 17px;
+      background: var(--accent);
+      border-radius: 3px;
+    }
+    .figure img {
+      filter: drop-shadow(0 12px 11px #11182729)
+        drop-shadow(0 23px 38px #11182719);
+    }
+    .footer {
+      align-items: baseline;
+      border-top-color: color-mix(in srgb, var(--ink) 22%, transparent);
+    }
+    .panel {
+      gap: 15px;
+    }
+    .panel .identity {
+      padding-bottom: 7px;
+    }
+    .panel .accent-mark {
+      width: 30px;
+      height: 3px;
+      margin-bottom: 11px;
+    }
+    .panel .copy p {
+      color: color-mix(in srgb, var(--ink) 92%, var(--paper));
+    }
+    .panel .visual {
+      align-self: stretch;
+    }
+    .sequence li {
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 15px;
+      padding: 19px 0;
+    }
+    .sequence-mark {
+      display: block;
+      width: 9px;
+      height: 9px;
+      background: var(--accent);
+      border-radius: 50%;
+      justify-self: center;
+    }
+    .sequence.flow .sequence-mark {
+      background: none;
+      width: 12px;
+      height: 12px;
+      border: solid var(--accent);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) translate(-2px, -2px);
+      border-radius: 0;
+    }
+    .sequence.flow li:last-child .sequence-mark {
+      width: 8px;
+      height: 8px;
+      border: 0;
+      background: var(--accent);
+      transform: none;
+      border-radius: 50%;
+    }
+    .notebook .accent-mark {
+      height: 6px;
+      width: 72px;
+      transform: rotate(-4deg);
+      opacity: 0.8;
+      border-radius: 1px 10px 10px 1px;
+    }
+    .notebook:not(.panel) .copy {
+      top: 158px;
+      width: 421px;
+    }
+    .notebook .hero-note {
+      bottom: 124px;
+    }
+    .atlas .accent-mark,
+    .survey .accent-mark,
+    .hardware .accent-mark {
+      height: 10px;
+      width: 53px;
+      background: repeating-linear-gradient(
+        90deg,
+        var(--accent) 0 2px,
+        transparent 2px 8px
+      );
+      border-radius: 0;
+    }
+    .atlas:not(.panel) .copy {
+      width: 448px;
+    }
+    .atlas .hero-note {
+      font-size: 81px;
+      bottom: 93px;
+    }
+    .survey:not(.panel) .copy {
+      top: 174px;
+    }
+    .survey .hero-note {
+      font-size: 58px;
+      bottom: 94px;
+    }
+    .film .accent-mark {
+      height: 11px;
+      width: 69px;
+      background: radial-gradient(circle, var(--accent) 2.5px, transparent 3px)
+        0 0/12px 11px;
+    }
+    .film .visual .figure {
+      border-block-width: 4px;
+    }
+    .cinema .accent-mark,
+    .world .accent-mark,
+    .auto .accent-mark {
+      height: 2px;
+      width: 69px;
+    }
+    .cinema:not(.panel) .copy,
+    .auto:not(.panel) .copy {
+      bottom: 98px;
+    }
+    .world:not(.panel) .visual:after {
+      background:
+        linear-gradient(0deg, var(--paper), transparent 40%),
+        linear-gradient(
+          90deg,
+          color-mix(in srgb, var(--paper) 97%, transparent) 7%,
+          color-mix(in srgb, var(--paper) 82%, transparent) 33%,
+          transparent 72%
+        );
+    }
+    .auto:not(.panel) .accent-mark {
+      margin-left: auto;
+    }
+    .voice .accent-mark {
+      display: none;
+    }
+    .voice .wave {
+      opacity: 0.84;
+    }
+    .voice .visual .figure img {
+      outline: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    }
+    .hardware:not(.panel) .copy {
+      width: 460px;
+      top: 126px;
+    }
+    .hardware .hero-note {
+      bottom: 93px;
+    }
+    .optic {
+      --texture: radial-gradient(
+        ellipse at 79% 51%,
+        #fcfdff 1%,
+        #cadfff 48%,
+        transparent 70%
+      );
+    }
+    .optic .visual {
+      isolation: isolate;
+    }
+    .optic .visual:before {
+      content: "";
+      position: absolute;
+      inset: 16px 23%;
+      border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+      border-radius: 50%;
+      transform: rotate(-18deg);
+      z-index: -1;
+    }
+    .optic .accent-mark {
+      height: 13px;
+      width: 13px;
+      border: 2px solid var(--accent);
+      background: none;
+      border-radius: 50%;
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent);
+    }
+    .optic:not(.panel) .copy {
+      top: 145px;
+      width: 420px;
+    }
+    .desktop .accent-mark {
+      width: 44px;
+      height: 6px;
+      background: linear-gradient(90deg, #4a98e1, var(--accent));
+      box-shadow: 0 0 17px color-mix(in srgb, var(--accent) 56%, transparent);
+    }
+    .career {
+      --texture:
+        radial-gradient(ellipse at 77% 53%, #cbdef4, transparent 63%),
+        linear-gradient(126deg, #fbfcfe 0 49%, transparent 49%);
+    }
+    .career:not(.panel) .copy {
+      top: 135px;
+      width: 424px;
+    }
+    .career:not(.panel) .copy h1 {
+      font-size: 67px;
+    }
+    .career:not(.panel) .visual {
+      left: 493px;
+      right: 46px;
+      inset-block: 105px 65px;
+    }
+    .career:not(.panel) .figure:first-child {
+      transform: rotate(1deg);
+    }
+    .career .figure img {
+      border-radius: 12px;
+      outline: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+    }
+    .career .accent-mark {
+      width: 68px;
+      height: 5px;
+      border-radius: 0 12px 12px 0;
+    }
+    .dialogue .accent-mark {
+      width: 47px;
+      height: 10px;
+      background: radial-gradient(circle, var(--accent) 3px, transparent 3.5px)
+        0 0/14px 10px;
+    }
+    .dialogue .hero-note {
+      display: none;
+    }
+    .terminal .accent-mark {
+      width: 14px;
+      height: 12px;
+      border: solid var(--accent);
+      border-width: 0 2px 2px 0;
+      background: none;
+      transform: rotate(-45deg);
+      border-radius: 0;
+    }
+    .terminal .hero-note {
+      bottom: 105px;
+    }
+    .study .accent-mark {
+      width: 72px;
+      height: 8px;
+      background:
+        linear-gradient(var(--accent), var(--accent)) 0 0/70px 1px no-repeat,
+        linear-gradient(var(--accent), var(--accent)) 0 5px/44px 1px no-repeat;
+    }
+    .study:not(.panel) .copy {
+      top: 126px;
+    }
+    .ledger .accent-mark {
+      width: 15px;
+      height: 15px;
+      background: transparent;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 0 5px #ffdd8640;
+    }
+    .ledger .hero-note {
+      bottom: 99px;
+    }
+    .planner .accent-mark {
+      height: 10px;
+      width: 28px;
+      background: repeating-linear-gradient(
+        125deg,
+        var(--accent) 0 2px,
+        transparent 3px 7px
+      );
+    }
+    .document .accent-mark {
+      width: 46px;
+      height: 14px;
+      background: none;
+      border-left: 2px solid var(--accent);
+      border-top: 2px solid var(--accent);
+      border-radius: 3px 0 0 0;
+    }
+    .document:not(.panel) .copy {
+      width: 460px;
+      top: 127px;
+    }
+    .yearbook .accent-mark {
+      width: 38px;
+      height: 12px;
+      background: transparent;
+      border: 2px solid var(--accent);
+      transform: rotate(-8deg);
+      opacity: 0.8;
+    }
+    .yearbook .hero-note {
+      bottom: 99px;
+    }
+    .journal .accent-mark,
+    .news .accent-mark {
+      height: 3px;
+      width: 56px;
+      border-radius: 0;
+    }
+    .keynote .accent-mark {
+      display: none;
+    }
+    .news .brand img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      background: #000;
+      padding: 5px;
+      border-radius: 3px;
+    }
+    .panel.news .brand img {
+      width: 31px;
+      height: 31px;
+      padding: 4px;
+    }
+    .news .identity {
+      border-bottom: 3px double var(--accent);
+    }
+    .career .brand img {
+      width: auto;
+      height: 34px;
+      max-width: 230px;
+      border-radius: 0;
+      outline: 0;
+      filter: none;
+    }
+    .panel.career .brand img {
+      width: auto;
+      height: 24px;
+      max-width: 170px;
+    }
+    .career:not(.panel) .visual {
+      inset: 110px 48px 80px 470px;
+      display: block;
+    }
+    .career:not(.panel) .visual .figure:first-child {
+      position: absolute;
+      inset: 36px 90px 52px 0;
+      height: auto;
+      transform: rotate(-2deg);
+    }
+    .career:not(.panel) .visual .figure:nth-child(2) {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 184px;
+      height: auto;
+      transform: rotate(5deg);
+      z-index: 1;
+    }
+    .career:not(.panel) .visual .figure:nth-child(2) img,
+    .career.mobile-feature .figure img {
+      width: auto;
+      max-width: 100%;
+      height: auto;
+      max-height: 100%;
+      border: 5px solid #172537;
+      border-radius: 23px;
+      outline: 0;
+    }
+    .career.mobile-feature .copy h1 {
+      font-size: 43px;
+    }
+  </style>
+  <body>
+    <main
+      class="art document panel"
+      style="--paper: #eef4ff; --ink: #19273e; --accent: #1757bc"
     >
-      <path
-        d="M-100 780 C260 570 515 1040 1350 520"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1"
-      />
-      <path
-        d="M-100 796 C260 586 515 1056 1350 536"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1"
-      />
-      <path
-        d="M-100 812 C260 602 515 1072 1350 552"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1"
-      />
-      <path
-        d="M-100 828 C260 618 515 1088 1350 568"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1"
-      />
-      <path
-        d="M-100 844 C260 634 515 1104 1350 584"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1"
-      />
-      <path
-        d="M-100 860 C260 650 515 1120 1350 600"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1"
-      />
-    </svg>
-    <div class="halo"></div>
-    <div class="brand">
-      <img class="mark" src="assets/logo.webp" alt="" />PDFFlow
-    </div>
-    <div class="feature-number">02</div>
-    <div class="feature-copy">
-      <h1>Upload. Process.<br />Download. Done.</h1>
-      <p>
-        Inputs are deleted after processing; generated results expire within 30
-        minutes.
-      </p>
-    </div>
-    <div class="diagram">
-      <div class="flow-step"><b>1</b><span>Upload a document</span></div>
-      <div class="connector">↓</div>
-      <div class="flow-step"><b>2</b><span>Process and download</span></div>
-      <div class="connector">↓</div>
-      <div class="flow-step"><b>3</b><span>Temporary files expire</span></div>
-    </div>
-    <div class="media-note">Workflow overview</div>
-  </main>
+      <header class="identity">
+        <div class="brand">
+          <img src="assets/pdfflow/logo.webp" alt="" /><span>PDFFlow</span>
+        </div>
+        <span class="eyebrow">FEATURE</span>
+      </header>
+      <div class="copy">
+        <span class="accent-mark" aria-hidden="true"></span>
+        <h1>Upload. Process.<br /><span>Download. Done.</span></h1>
+        <p>
+          Inputs are deleted after processing; generated results expire within
+          30 minutes.
+        </p>
+      </div>
+      <div class="visual">
+        <ol class="sequence flow">
+          <li>
+            <span class="sequence-mark" aria-hidden="true"></span
+            ><span>Upload a document</span>
+          </li>
+          <li>
+            <span class="sequence-mark" aria-hidden="true"></span
+            ><span>Process and download</span>
+          </li>
+          <li>
+            <span class="sequence-mark" aria-hidden="true"></span
+            ><span>Temporary files expire</span>
+          </li>
+        </ol>
+      </div>
+      <footer class="footer">
+        <span>PDF workflow</span><span>Workflow overview</span>
+      </footer>
+    </main>
+  </body>
 </html>
