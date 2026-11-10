@@ -20,6 +20,24 @@
 
 </div>
 
+<!-- product-images:start -->
+
+## Product preview
+
+<p align="center">
+  <img src="docs/product-images/hero.png" alt="PDFFlow — PDF tools without accounts, trackers, or lingering files." width="100%">
+</p>
+
+<table>
+<tr>
+  <td width="33%"><img src="docs/product-images/feature-01.png" alt="The PDF job. Without the account. — Merge, split, compress, convert, protect, and watermark documents." width="100%"></td>
+  <td width="33%"><img src="docs/product-images/feature-02.png" alt="Upload. Process. Download. Done. — Inputs are deleted after processing; generated results expire within 30 minutes." width="100%"></td>
+  <td width="33%"><img src="docs/product-images/feature-03.png" alt="A useful set of document tools. — Choose a focused tool and take the finished file with you." width="100%"></td>
+</tr>
+</table>
+
+<!-- product-images:end -->
+
 ---
 
 ![PDFFlow landing page](docs/images/pdfflow-landing.png)
@@ -32,21 +50,21 @@ There are no accounts, session cookies, analytics, or advertising trackers. Uplo
 
 ## Features
 
-| Tool | What it does | Output |
-| --- | --- | --- |
-| **Merge PDF** | Combine multiple PDFs in drag-and-drop order | PDF |
-| **Split PDF** | Split every page, or use explicit page ranges | ZIP |
-| **Extract Pages** | Build a new document from selected pages | PDF |
-| **Rotate PDF** | Rotate the whole document or selected pages | PDF |
-| **Organize Pages** | Reorder, rotate, duplicate and remove pages visually | PDF |
-| **Compress PDF** | Choose a compression level and compare file sizes | PDF |
-| **Office to PDF** | Convert DOCX, XLSX and PPTX with LibreOffice | PDF |
-| **Images to PDF** | Turn JPG, PNG and WEBP images into one PDF | PDF |
-| **PDF to Images** | Render pages as PNG, JPEG or WEBP at 72, 150 or 300 DPI | ZIP |
-| **Protect PDF** | Encrypt with AES-256 and optionally restrict printing or copying | PDF |
-| **Unlock PDF** | Remove protection with the document's password | PDF |
-| **Watermark PDF** | Stamp text or a logo, centered or tiled, with a live preview | PDF |
-| **Extract Images** | Pull out every embedded image, with JPEGs untouched and transparency kept | ZIP |
+| Tool               | What it does                                                              | Output |
+| ------------------ | ------------------------------------------------------------------------- | ------ |
+| **Merge PDF**      | Combine multiple PDFs in drag-and-drop order                              | PDF    |
+| **Split PDF**      | Split every page, or use explicit page ranges                             | ZIP    |
+| **Extract Pages**  | Build a new document from selected pages                                  | PDF    |
+| **Rotate PDF**     | Rotate the whole document or selected pages                               | PDF    |
+| **Organize Pages** | Reorder, rotate, duplicate and remove pages visually                      | PDF    |
+| **Compress PDF**   | Choose a compression level and compare file sizes                         | PDF    |
+| **Office to PDF**  | Convert DOCX, XLSX and PPTX with LibreOffice                              | PDF    |
+| **Images to PDF**  | Turn JPG, PNG and WEBP images into one PDF                                | PDF    |
+| **PDF to Images**  | Render pages as PNG, JPEG or WEBP at 72, 150 or 300 DPI                   | ZIP    |
+| **Protect PDF**    | Encrypt with AES-256 and optionally restrict printing or copying          | PDF    |
+| **Unlock PDF**     | Remove protection with the document's password                            | PDF    |
+| **Watermark PDF**  | Stamp text or a logo, centered or tiled, with a live preview              | PDF    |
+| **Extract Images** | Pull out every embedded image, with JPEGs untouched and transparency kept | ZIP    |
 
 Also included:
 
@@ -58,14 +76,14 @@ Also included:
 
 ## Tech Stack
 
-| Area | Technology |
-| --- | --- |
-| Frontend | Nuxt 4, Vue 3, TypeScript, Tailwind CSS 4, Nuxt UI, Pinia |
-| API | FastAPI, Pydantic v2, SQLAlchemy 2, Alembic |
-| Processing | Celery 5, PyMuPDF, pypdf, Pillow, LibreOffice |
-| Data and events | PostgreSQL 16, Redis 7 |
-| Infrastructure | Docker Compose, Nginx, Railway |
-| Testing | Pytest, Vitest, GitHub Actions |
+| Area            | Technology                                                |
+| --------------- | --------------------------------------------------------- |
+| Frontend        | Nuxt 4, Vue 3, TypeScript, Tailwind CSS 4, Nuxt UI, Pinia |
+| API             | FastAPI, Pydantic v2, SQLAlchemy 2, Alembic               |
+| Processing      | Celery 5, PyMuPDF, pypdf, Pillow, LibreOffice             |
+| Data and events | PostgreSQL 16, Redis 7                                    |
+| Infrastructure  | Docker Compose, Nginx, Railway                            |
+| Testing         | Pytest, Vitest, GitHub Actions                            |
 
 ## Architecture
 
@@ -138,15 +156,15 @@ npm run dev
 
 ### Environment Variables
 
-| Variable | Default | Purpose |
-| --- | --- | --- |
-| `HTTP_PORT` | `8080` | Public Nginx port |
-| `MAX_UPLOAD_BYTES` | `104857600` | Per-file upload limit (100 MB) |
-| `MAX_FILES_PER_JOB` | `25` | Files accepted by one job |
-| `FILE_TTL_MINUTES` | `30` | Maximum result lifetime |
-| `CLEANUP_INTERVAL_SECONDS` | `300` | Expired-file sweep interval |
-| `CORS_ORIGINS` | Localhost | Allowed browser origins |
-| `TRUSTED_PROXIES` | Private networks | Proxies allowed to set forwarding headers |
+| Variable                   | Default          | Purpose                                   |
+| -------------------------- | ---------------- | ----------------------------------------- |
+| `HTTP_PORT`                | `8080`           | Public Nginx port                         |
+| `MAX_UPLOAD_BYTES`         | `104857600`      | Per-file upload limit (100 MB)            |
+| `MAX_FILES_PER_JOB`        | `25`             | Files accepted by one job                 |
+| `FILE_TTL_MINUTES`         | `30`             | Maximum result lifetime                   |
+| `CLEANUP_INTERVAL_SECONDS` | `300`            | Expired-file sweep interval               |
+| `CORS_ORIGINS`             | Localhost        | Allowed browser origins                   |
+| `TRUSTED_PROXIES`          | Private networks | Proxies allowed to set forwarding headers |
 
 ### Testing
 
@@ -157,15 +175,15 @@ cd frontend && npm test && npm run typecheck && npm run build
 
 ## API
 
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `GET` | `/api/operations` | Discover the available tools and their file requirements |
-| `POST` | `/api/upload` | Upload one or more validated files |
-| `POST` | `/api/jobs/create` | Queue an operation |
-| `GET` | `/api/jobs/{id}/events` | Follow progress over Server-Sent Events |
-| `GET` | `/api/jobs/{id}/status` | Poll the job status |
-| `GET` | `/api/download/{id}` | Download the completed result |
-| `GET` | `/api/health` | Check API, PostgreSQL and Redis health |
+| Method | Endpoint                | Purpose                                                  |
+| ------ | ----------------------- | -------------------------------------------------------- |
+| `GET`  | `/api/operations`       | Discover the available tools and their file requirements |
+| `POST` | `/api/upload`           | Upload one or more validated files                       |
+| `POST` | `/api/jobs/create`      | Queue an operation                                       |
+| `GET`  | `/api/jobs/{id}/events` | Follow progress over Server-Sent Events                  |
+| `GET`  | `/api/jobs/{id}/status` | Poll the job status                                      |
+| `GET`  | `/api/download/{id}`    | Download the completed result                            |
+| `GET`  | `/api/health`           | Check API, PostgreSQL and Redis health                   |
 
 Swagger UI is at `/docs`, ReDoc at `/redoc`, and the OpenAPI schema at `/openapi.json`.
 
